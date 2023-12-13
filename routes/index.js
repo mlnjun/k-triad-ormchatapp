@@ -33,7 +33,7 @@ router.post("/entry", function (req, res, next) {
 
 // 암호 찾기 웹 페이지 GET 요청 - 암호찾기 웹페이지 응답
 router.get("/find", function (req, res, next) {
-  res.render("find.ejs");
+  res.render("find.ejs", { message: "" });
 });
 
 // 암호찾기 처리 POST 요청 - 암호 찾기 완료 후 로그인 페이지 이동처리
