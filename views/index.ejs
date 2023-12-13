@@ -2,10 +2,41 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+    <style>
+      body {
+        margin: 20px;
+      }
+
+      a {
+        color: blue;
+        font-size: 20px;
+        margin: 20px;
+        display: inline-block;
+      }
+
+      div a {
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
+    <h1>🪓삼합회_사용자 앱🪓</h1>
+    <h2>웹 페이지</h2>
+    <a href="/login">로그인</a>
+    <a href="/entry">회원가입</a>
+    <a href="/chat">Chat 페이지</a>
+    <a href="/find">암호 찾기</a>
+
+    <h2>channel API</h2>
+    <div>
+      <p><a href="/api/channel/all">/api/channel/all</a></p>
+      <p><a href="/api/channel/3">/api/channel/:cid</a></p>
+    </div>
+    <h2>member API</h2>
+    <div>
+      <p><a href="/api/member/all">api/member/all</a></p>
+      <p><a href="/api/member/2">api/member/:mid</a></p>
+    </div>
   </body>
 </html>

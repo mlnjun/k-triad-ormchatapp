@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        margin: 50px;
+      }
+
+      input {
+        margin: 10px;
+      }
+
+      button {
+        padding: 10px;
+      }
+    </style>
+    <title>LogIn</title>
+  </head>
+  <body>
+    <h1>로그인페이지</h1>
+    <form action="/login" method="post"">
+      이메일: <input type="email" name="email" id="email" value="" required /> <br />
+
+      암호: <input type="password" name="password" id="password" required /><br />
+
+      <button type="submit" >로 그 인</button>
+      <a href="/find">비밀번호 찾기</a>
+    </form>
+  </body>
+</html>
