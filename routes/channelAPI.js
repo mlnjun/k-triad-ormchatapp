@@ -7,6 +7,7 @@ var router = express.Router();
 http://localhost:3000/api/channel
 */
 
+
 // 채널 데이터
 let channelData = [
   {
@@ -27,12 +28,15 @@ let channelData = [
 ]
 
 
-// 회원 정보 관리 RESTful API 라우팅 기능 제공
+// 채널 정보 관리 RESTful API 라우팅 기능 제공
+// http://localhost:3000/api/channel/all
 router.get('/all',async(req, res)=>{
   res.json(channelData);
 });
 
 
+// 채널 생성 요청과 응답 메소드
+// http://localhost:3000/api/channel/create
 router.post('/create',async(req,res)=>{
   var chName = req.body.chName;
   var chDescription = req.body.chDescription;
@@ -54,7 +58,7 @@ router.post('/create',async(req,res)=>{
 })
 
 
-
+// 채널 수정 요청과 응답 메소드
 // http://localhost:3000/api/channel/modify
 router.post('/modify',async(req,res)=>{
   let {chName, chDescription, chid} = req.body;
@@ -66,10 +70,23 @@ router.post('/modify',async(req,res)=>{
     chid
   }
 
-  channelData.push(modifyChdata);
+  let index
 
 
-  res.json(channelData);
+  for(let i = 0; i<channelData.length; i++){
+    if(channelData[i].chid == chid){
+      channelData[i] = modifyChdata;
+      // console.log(channelData[i])
+      res.json(channelData[i]);
+      index = i;
+      break;
+    }
+  }
+
+
+  if(channelData[index] == undefined){
+    res.send("해당 계정은 존재하지 않습니다.");
+  }
 
 })
 
@@ -111,7 +128,7 @@ router.get('/cid/:chName',async(req, res)=>{
       break;
     }
   }
-  
+
 
 })
 
