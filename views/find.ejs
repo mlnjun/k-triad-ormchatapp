@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>암호 찾기</title>
+</head>
+<body>
+  <h1>암호 찾기</h1>
+  <form action="/find" method="POST">
+    <label for="email">이메일:</label>
+    <input type="email" name="email" required>
+    <br>
+    <button type="submit">암호 찾기</button>
+  </form>
+  
+  <% if (message) { %>
+    <p><%= message %></p>
+  <% } %>
+
+  <p>계정이 있으신가요? <a href="/login">로그인</a></p>
+</body>
+</html>
