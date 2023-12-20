@@ -62,8 +62,8 @@ POST
 */
 router.post('/login',async(req,res)=>{
   // 사용자 입력 id, pw 입력 받기
-  let email = req.body.uid;
-  let member_password = req.body.upassword;
+  let email = req.body.email;
+  let member_password = req.body.password;
 
 
   // ID PW를 DB에서 찾기
@@ -106,27 +106,23 @@ router.post('/entry',async(req, res)=>{
   
 // 회원가입 정보 입력 받기
 // uid, upassword, userName, age, phone
-let [email, member_password, name, birth_date, telephone, entry_type_code] = [
-  req.body.uid,
-  req.body.upassword,
+let [email, member_password, name, telephone] = [
+  req.body.email,
+  req.body.password,
   req.body.name,
-  req.body.birth,
   req.body.telephone,
-  req.body.entry_type_code
 ];
 
 
 // 데이터 json객체로 만들기
 let userMember = {
-  member_id:member.length+2,
+  member_id:member.length+1,
   email,
   member_password,
   name,
   telephone,
-  birth_date,
-  entry_type_code,
   use_state_code:1,
-  reg_member_id:member.length+2,
+  reg_member_id:member.length+1,
   reg_date:Date.now()
 }
 
@@ -181,7 +177,7 @@ router.post('/find',async(req, res)=>{
     for(let i=0; i<member.length; i++){
       if(member[i].email === foundEmail.email){
         // 로그인 페이지 이동 처리
-        res.render('login', {upassword:member[i].member_password});
+        res.render('login', {password:member[i].member_password});
         return false;
       }
     }
