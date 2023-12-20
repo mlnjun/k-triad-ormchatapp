@@ -9,6 +9,7 @@ var usersRouter = require('./routes/users');
 
 var channelRouter = require('./routes/channel');
 var channelAPIRouter = require('./routes/channelAPI');
+var memberAPIRouter = require('./routes/memberAPI');
 
 var app = express();
 
@@ -27,6 +28,7 @@ app.use('/users', usersRouter);
 
 app.use('/chat', channelRouter);
 app.use('/api/channel', channelAPIRouter);
+app.use('/api/member', memberAPIRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
