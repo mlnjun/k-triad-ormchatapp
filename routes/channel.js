@@ -10,7 +10,7 @@ var router = express.Router();
 GET
 */
 router.get('/',async(req, res)=>{
-  res.render('chat/index');
+  res.render('chat/index', {layout:false});
 });
 
 

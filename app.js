@@ -4,6 +4,9 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+// 레이아웃 패키지
+var expressLayouts = require('express-ejs-layouts');
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
@@ -16,6 +19,13 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+// 레이아웃 설정
+app.set('layout', 'layout');
+app.set("layout extractScripts", true);
+app.set("layout extractStyles", true);
+app.set("layout extractMetas", true);
+app.use(expressLayouts);
 
 app.use(logger('dev'));
 app.use(express.json());

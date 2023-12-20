@@ -1,0 +1,155 @@
+// White Shades
+$white: #ffffff;
+$white-pearl: #f2f4f9;
+
+// Black Shades
+$black: #000000;
+
+// Font Colors
+$font-color: #efeff7;
+$font-color-light: #8c96a0;
+
+// Light, Dark Colors
+$light-color: #f5f8fd;
+$dark-color: #212c3a;
+
+// Body Colors
+$light-bg: #f2f4f9;
+$dark-bg: #a6b2c5;
+
+// Border Colors
+$border-bg: #e1e8f3;
+$border-bg-dark: #37404a;
+$border-bg-light: #f2f4f9;
+$list-border: #47515d;
+
+// Forms
+$form-border: #454f5a;
+$form-border-hover: #5e6975;
+$form-bg: #37404a;
+$toggle-bg: #47515d;
+
+// Primary & Secondary Colors
+$primary-bg-dark: #12171b;
+$primary-bg: #72c976;
+$primary-color: #ffffff;
+$primary-light: #37404a;
+$primary-dark: #4b5561;
+$secondary-bg: #545f6b;
+$secondary-color: #ffffff;
+
+// Cards
+$card-shadow: #262e35;
+$chat-card-bg: #2a333c;
+$chat-card-hover-bg: #262e35;
+
+// Page Content
+$page-content-bg: #262e35;
+
+// Login
+$login-content-bg: #303841;
+
+// Sidebar Color
+$sidebar-bg: #36404a;
+$sidebar-hover-bg: #3e4752;
+$sidebar-active-bg: #303841;
+
+// Tab Content Color
+$tab-content-bg: #303841;
+
+// Chat Active Colors
+$chat-active: #2b333c;
+$chat-hover: #2c343e;
+
+// Navbar Color
+$nav-tooltip-bg: #000000;
+$nav-tooltip-text: #ffffff;
+
+// Colors
+$red: #f96f61;
+$light-red: #ffdbdb;
+$dark-red: #de3e3e;
+$green: #72c976;
+$light-green: #d8eccb;
+$dark-green: #08960e;
+$peacock-green: #83d050;
+$yellow: #feca30;
+$light-yellow: #f7e6b5;
+$dark-yellow: #cc9a09;
+$blue: #1cbeac;
+$light-blue: #d5eafd;
+$dark-blue: #2d8dec;
+$pink: #e75b62;
+$light-pink: #ffe2e7;
+$dark-pink: #e24f69;
+$peach: #e75b62;
+$maroon: #8f4a6e;
+$orange: #ff9337;
+$light-orange: #fde8d9;
+$dark-orange: #e6680e;
+$violet: #c75e9d;
+$light-violet: #f2e2ff;
+$dark-violet: #8936ca;
+$purple: #c22dfe;
+$brown: #b36135;
+$light-brown: #e8dad7;
+$dark-brown: #a7644a;
+
+
+
+/*************** 2.Mixins ***************/
+
+// Transition
+@mixin transition($transition-property, $transition-time, $method) {
+	-webkit-transition: $transition-property $transition-time $method;
+	-moz-transition: $transition-property $transition-time $method;
+	-ms-transition: $transition-property $transition-time $method;
+	-o-transition: $transition-property $transition-time $method;
+	transition: $transition-property $transition-time $method;
+}
+
+// Box Sizing
+@mixin box-sizing($string){
+	-webkit-box-sizing: $string;
+	-moz-box-sizing: $string;
+	box-sizing: $string;
+}
+
+// Box Shadow
+@mixin box-shadow($off-y, $off-x, $blur, $color){
+	-moz-box-shadow: $off-y $off-x $blur $color; /* FF3.5+ */
+	-webkit-box-shadow: $off-y $off-x $blur $color; /* Saf3.0+, Chrome */
+	box-shadow: $off-y $off-x $blur $color; /* Opera 10.5, IE9 */
+}
+@mixin box-shadow-inset($top, $left, $blur, $color, $inset:"") {
+	-webkit-box-shadow: $top $left $blur $color $inset;
+	-moz-box-shadow: $top $left $blur $color $inset;
+	box-shadow: $top $left $blur $color $inset;
+}
+
+// Border Radius
+@mixin roundedCorners($size) {
+	-webkit-border-radius: $size + px;
+	-moz-border-radius: $size + px;
+	border-radius: $size + px;
+}
+@mixin roundedCornersAll($size1, $size2, $size3, $size4) {
+	-webkit-border-radius: $size1 $size2 $size3 $size4;
+	-moz-border-radius: $size1 $size2 $size3 $size4;
+	border-radius: $size1 $size2 $size3 $size4;
+}
+
+// Transform
+@mixin transform($args){
+	-webkit-transform: $args;
+	-moz-transform: $args;
+	-o-transform: $args;
+	-ms-transform: $args;
+	transform: $args;
+}
+
+// Opacity
+@mixin opacity($opacity) {
+	opacity: $opacity / 100;
+	filter: alpha(opacity=$opacity);
+}
