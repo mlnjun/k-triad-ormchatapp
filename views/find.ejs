@@ -1,23 +1,24 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>암호 찾기</title>
-</head>
-<body>
-  <h1>암호 찾기</h1>
-  <form action="/find" method="POST">
-    <label for="email">이메일:</label>
-    <input type="email" name="email" required>
-    <br>
-    <button type="submit">암호 찾기</button>
-  </form>
-  
-  <% if (message) { %>
-    <p><%= message %></p>
-  <% } %>
-
-  <p>계정이 있으신가요? <a href="/login">로그인</a></p>
-</body>
-</html>
+<form action="/find" method="post">
+  <div class="login-screen">
+    <div class="login-body pb-4">
+      <a href="index.html" class="login-logo">
+        <img src="img/logo.svg" alt="Quick Chat" />
+      </a>
+      <h6>
+        In order to access your account, please enter the email id you provided
+        during the registration process.
+      </h6>
+      <div class="field-wrapper mb-3">
+        <input type="email" name="email" autofocus required />
+        <div class="field-placeholder">이메일</div>
+      </div>
+      <div class="field-wrapper mb-3">
+        <input type="text" name="telephone" required />
+        <div class="field-placeholder">전화번호</div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary ml-auto">Submit</button>
+      </div>
+    </div>
+  </div>
+</form>
