@@ -51,7 +51,7 @@ GET
 */
 router.get('/login',async(req, res)=>{
   
-  res.render('login',{upassword:""});
+  res.render('login',{password:""});
 });
 
 
