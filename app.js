@@ -14,7 +14,11 @@ var channelRouter = require('./routes/channel');
 var channelAPIRouter = require('./routes/channelAPI');
 var memberAPIRouter = require('./routes/memberAPI');
 
+var sequelize = require('./models/index.js').sequelize;
+
 var app = express();
+
+sequelize.sync();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
