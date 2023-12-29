@@ -1,48 +1,13 @@
 var express = require('express');
 var router = express.Router();
 
+var crypto = require('crypto')
+
+var db = require('../models/index');
+const { randomInt } = require('crypto');
+
 // 공통기능 제공 (로그인, 회원가입, 암호찾기)
 
-
-// 임시 DB
-var member = [
-  {
-    member_id:1,
-    email:"qwe123@gmail.com",
-    member_password:"qwe123",
-    name:"A",
-    telephone:"010-9999-9999",
-    birth_date:"2000-01-01",
-    entry_type_code:1,
-    use_state_code:1,
-    reg_member_id:1,
-    reg_date:Date.now()
-  },
-  {
-    member_id:2,
-    email:"asd123@gmail.com",
-    member_password:"asd123",
-    name:"B",
-    telephone:"010-8888-8888",
-    birth_date:"2000-01-01",
-    entry_type_code:2,
-    use_state_code:2,
-    reg_member_id:2,
-    reg_date:Date.now()
-  },
-  {
-    member_id:3,
-    email:"zxc123@gmail.com",
-    member_password:"zxc123",
-    name:"C",
-    telephone:"010-7777-7777",
-    birth_date:"2000-01-01",
-    entry_type_code:2,
-    use_state_code:1,
-    reg_member_id:3,
-    reg_date:Date.now()
-  },
-]
 
 /*
 -로그인 웹페이지 요청 및 응답
@@ -51,7 +16,7 @@ GET
 */
 router.get('/login',async(req, res)=>{
   
-  res.render('login',{password:""});
+  res.render('login',{email:"",password:"", resultMsg:""});
 });
 
 
@@ -65,22 +30,28 @@ router.post('/login',async(req,res)=>{
   let email = req.body.email;
   let member_password = req.body.password;
 
-
+  
   // ID PW를 DB에서 찾기
-  let foundEmail = member.find(function(e){
-    return email === e.email
-  });
+  const loginMember = await db.Member.findOne({where:{email:email}});
 
-  let foundPassword = member.find(function(pw){
-    return member_password === pw.member_password
-  });
+  resultMsg = ""
 
-
-  if(foundEmail === undefined &&  foundPassword === undefined){
-    res.redirect('/login')
+  if(loginMember == null){
+    // 이메일 틀림
+    resultMsg = "해당 이메일은 존재하지 않습니다.";
   }else{
-    // 로그인 일치하는 ID,PW 있을시 채팅 페이지 이동처리
-    res.redirect('/chat');
+    if(loginMember.member_password === member_password){
+      // 로그인 성공
+      res.redirect('/chat');
+    }else{
+      // 암호 틀림
+      resultMsg = "암호가 틀렸습니다.";
+    }
+  }
+
+
+  if(resultMsg){
+    res.render('login',{email:email, password:member_password, resultMsg:resultMsg});
   }
 
 
@@ -106,41 +77,39 @@ router.post('/entry',async(req, res)=>{
   
 // 회원가입 정보 입력 받기
 // uid, upassword, userName, age, phone
-let [email, member_password, name, telephone] = [
+let [entry_type_code, email, member_password, name, telephone, birth_date, profile_img_path] = [
+  req.body.entry_type_code,
   req.body.email,
   req.body.password,
   req.body.name,
   req.body.telephone,
+  req.body.birth_date,
+  req.body.profile_img_path
 ];
 
 
 // 데이터 json객체로 만들기
-let userMember = {
-  member_id:member.length+1,
+let newMember = {
   email,
   member_password,
   name,
+  profile_img_path,
   telephone,
+  entry_type_code,
   use_state_code:1,
-  reg_member_id:member.length+1,
-  reg_date:Date.now()
+  birth_date,
+  reg_date:Date.now(),
+  reg_member_id:crypto.randomInt(1, 100000)
 }
 
+  // DB에 새 계정 데이터 생성
+  if(newMember.entry_type_code !== "0"){
+    await db.Member.create(newMember);
+    res.redirect('/login');
+  }else{
+    res.redirect('/entry');
+  }
 
-let userMemberValue = Object.values(userMember);
-
-
-if(userMemberValue.includes("")){
-  // 입력값 존재하지 않을 때 거부하기
-  res.redirect('/entry');
-}else{
-  // 받은 회원가입 정보 DB에 추가하기
-  member.push(userMember);
-  
-  // 로그인 페이지 이동 처리
-  res.redirect('/login');
-
-}
 
 });
 
@@ -152,7 +121,7 @@ if(userMemberValue.includes("")){
 GET
 */
 router.get('/find',async(req, res)=>{
-  res.render('find');
+  res.render('find',{resultMsg:""});
 });
 
 
@@ -165,29 +134,35 @@ router.post('/find',async(req, res)=>{
     
   // 사용자 계정의 email 받기
   let email = req.body.email;
+  let telephone = req.body.telephone;
 
 
   // 받은 email DB에서 유무 체크
-  let foundEmail = member.find(function(e){
-    return e.email === email;
-  })
+  let foundMember = await db.Member.findOne({where:{email:email}});
 
+  let resultMsg = ""
 
-  if(foundEmail){
-    for(let i=0; i<member.length; i++){
-      if(member[i].email === foundEmail.email){
-        // 로그인 페이지 이동 처리
-        res.render('login', {password:member[i].member_password});
-        return false;
-      }
+  if(foundMember === null){
+    // 이메일 틀림
+    resultMsg = "입력한 정보가 맞지 않습니다.";
+    res.render('find',{resultMsg:resultMsg});
+  }else{
+    if(foundMember.telephone === telephone){
+      // 해당 계정 존재 > 이메일 비밀번호 전송
+      resultMsg = "해당 계정의 비밀번호를 찾았습니다.";
+      res.render(
+        'login',
+        {
+          email:email,
+          password:foundMember.member_password,
+          resultMsg:resultMsg
+      });
+    }else{
+      // 전화번호 틀림
+      resultMsg = "입력한 정보가 맞지 않습니다.";
+      res.render('find',{resultMsg:resultMsg});
     }
   }
-  
-  res.redirect('/find');
-  
-
-  // DB에서 해당 email의 계정 PW 데이터 전송
-
 });
 
 

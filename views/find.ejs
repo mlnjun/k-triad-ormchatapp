@@ -1,12 +1,12 @@
 <form action="/find" method="post">
   <div class="login-screen">
     <div class="login-body pb-4">
-      <a href="index.html" class="login-logo">
+      <a href="/login" class="login-logo">
         <img src="img/logo.svg" alt="Quick Chat" />
       </a>
-      <h6>
-        In order to access your account, please enter the email id you provided
-        during the registration process.
+      <h6 id="comment">
+        비밀번호 찾기
+        <br>이메일과 전화번호를 입력하세요
       </h6>
       <div class="field-wrapper mb-3">
         <input type="email" name="email" autofocus required />
@@ -22,3 +22,10 @@
     </div>
   </div>
 </form>
+
+
+<script>
+  if('<%=resultMsg%>' !== ""){
+    $('#comment').text("<%=resultMsg%>");
+  }
+</script>
