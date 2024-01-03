@@ -1,183 +1,291 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 
+var db = require("../models");
 
 //회원 정보 관리 RESTful API 라우팅 기능 제공
 // http://localhost:3000/api/member
 
-var member = [
-  {
-    member_id:1,
-    email:"qwe123@gmail.com",
-    member_password:"qwe123",
-    name:"A",
-    telephone:"010-9999-9999",
-    birth_date:"2000-01-01",
-    entry_type_code:1,
-    use_state_code:1,
-    reg_member_id:1,
-    reg_date:Date.now()
-  },
-  {
-    member_id:2,
-    email:"asd123@gmail.com",
-    member_password:"asd123",
-    name:"B",
-    telephone:"010-8888-8888",
-    birth_date:"2000-01-01",
-    entry_type_code:2,
-    use_state_code:2,
-    reg_member_id:2,
-    reg_date:Date.now()
-  },
-  {
-    member_id:3,
-    email:"zxc123@gmail.com",
-    member_password:"zxc123",
-    name:"C",
-    telephone:"010-7777-7777",
-    birth_date:"2000-01-01",
-    entry_type_code:2,
-    use_state_code:1,
-    reg_member_id:3,
-    reg_date:Date.now()
-  },
-]
+router.post("/login", async function (req, res, next) {
+  var apiResult = {
+    code: 200,
+    data: null,
+    result: "",
+  };
 
+  try {
+    // step1: 사용자 로그인 정보 추출하기
+    const { email, member_password } = req.body;
 
+    // step2: DB members테이블에서 동일한 메일주소의 단일 사용자 정보 조회
+    const member = await db.Member.findOne({ where: { email } });
 
-// 회원 정보 관리 RESTful API 라우팅 기능 제공
-// http://localhost:3000/api/member/all
-router.get('/all',async(req, res)=>{
-  res.json(member);
+    // step3: 로그인 처리 로직 구현
+    var resultMsg = "";
+
+    if (member == null) {
+      resultMsg = "동일한 메일주소가 존재하지 않습니다.";
+      apiResult.code = 400;
+      apiResult.data = null;
+      apiResult.result = resultMsg;
+    } else {
+      // DB서버에 저장되어 조회된 암호값과 사용자가 입력한 암호값이 일치하면
+      if (member.member_password == member_password) {
+        resultMsg = "로그인 성공";
+        apiResult.code = 200;
+        apiResult.data = member;
+        apiResult.result = resultMsg;
+      } else {
+        resultMsg = "암호가 일치하지 않습니다.";
+        apiResult.code = 400;
+        apiResult.data = null;
+        apiResult.result = resultMsg;
+      }
+    }
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = "서버에러발생 관리자에게 문의하세요.";
+  }
+
+  res.json(apiResult);
 });
 
+router.post("/entry", async function (req, res, next) {
+  var apiResult = {
+    code: 200,
+    data: null,
+    result: "",
+  };
+
+  try {
+    const { name, member_password, telephone, email, birth_date } = req.body;
+
+    let birthDateStr = birth_date.split("-").join("").substr(2);
+
+    const newMember = {
+      name,
+      member_password,
+      telephone,
+      email,
+      profile_img_path:
+        "https://www.interpark.com/images/header/nav/icon_special.png",
+      entry_type_code: 1,
+      use_state_code: 1,
+      birth_date: birthDateStr,
+      reg_date: Date.now(),
+      reg_member_id: 2,
+    };
+
+    const member = await db.Member.create(newMember);
+
+    apiResult.code = 200;
+    apiResult.data = member;
+    apiResult.result = "ok";
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = "서버에러발생 관리자에게 문의하세요.";
+  }
+
+  res.json(apiResult);
+});
+
+router.post("/find", async (req, res) => {
+  var apiResult = {
+    code: 200,
+    data: null,
+    result: "",
+  };
+
+  try {
+    const email = req.body.email;
+
+    const member = await db.Member.findOne({ where: { email } });
+
+    var resultMsg = "";
+
+    if (member == null) {
+      resultMsg = "동일한 메일주소가 존재하지 않습니다.";
+      apiResult.code = 400;
+      apiResult.data = null;
+      apiResult.result = resultMsg;
+    } else {
+      resultMsg = "암호 찾기 완료.";
+      apiResult.code = 200;
+      apiResult.data = member.member_password;
+      apiResult.result = resultMsg;
+    }
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = "서버에러발생 관리자에게 문의하세요.";
+  }
+  res.json(apiResult);
+});
+
+// http://localhost:3000/api/member/all
+// 전체 회원목록 데이터 조회 GET 요청 - 전체 회원 목록 데이터 응답
+router.get("/all", async function (req, res, next) {
+  const apiResult = {
+    code: 200,
+    data: [],
+    result: "ok",
+  };
+
+  try {
+    const memberList = await db.Member.findAll();
+
+    apiResult.code = 200;
+    apiResult.data = memberList;
+    apiResult.result = "ok";
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = "Failed";
+  }
+  res.json(apiResult);
+});
 
 // 계정 생성
 // http://localhost:3000/api/member/create
-router.post('/create',async(req,res)=>{
+router.post("/create", async function (req, res, next) {
+  const apiResult = {
+    code: 200,
+    data: null,
+    result: "",
+  };
 
-  let newMember = req.body;
+  try {
+    const { name, member_password, telephone, email, birth_date } = req.body;
 
+    let birthDateStr = birth_date.split("-").join("").substr(2);
 
-  member.push(newMember);
+    const newMember = {
+      name,
+      member_password,
+      telephone,
+      email,
+      profile_img_path:
+        "https://www.interpark.com/images/header/nav/icon_special.png",
+      entry_type_code: 1,
+      use_state_code: 1,
+      birth_date: birthDateStr,
+      reg_date: Date.now(),
+      reg_member_id: 2,
+    };
 
+    const member = await db.Member.create(newMember);
 
-  res.json(member);
+    apiResult.code = 200;
+    apiResult.data = member;
+    apiResult.result = "ok";
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = "서버에러발생 관리자에게 문의하세요.";
+  }
 
-})
-
+  res.json(apiResult);
+});
 
 // 계정 정보 수정
 // http://localhost:3000/api/member/modify/1
-router.post('/modify/:uid',async(req,res)=>{
-  
-  try{
-    // 입력 받기
-    var member_id = req.params.uid;
-    var email = req.body.email;
-    var member_password = req.body.member_password;
-    var name = req.body.name;
-    var telephone = req.body.telephone;
-    var birth_date = req.body.birth_date;
-    var entry_type_code = req.body.entry_type_code;
-    var use_state_code = req.body.use_state_code
-    var reg_member_id = req.body.reg_member_id
-  
-  
-    // 받은 입력값 객체
-    let modifyMember = {
-      member_id,
-      email,
-      member_password,
+router.post("/modify/:mid", async function (req, res, next) {
+  const apiResult = {
+    code: 200,
+    data: [],
+    result: "ok",
+  };
+
+  try {
+    const member_id = req.params.mid;
+
+    const { name, member_password, telephone, email, birth_date } = req.body;
+
+    let birthDateStr = birth_date.split("-").join("").substr(2);
+
+    const editedMember = {
       name,
+      member_password,
       telephone,
-      birth_date,
-      entry_type_code,
-      use_state_code,
-      reg_member_id
-    }
-  
+      email,
+      profile_img_path:
+        "https://www.interpark.com/images/header/nav/icon_special.png",
+      entry_type_code: 1,
+      use_state_code: 1,
+      birth_date: birthDateStr,
+      edit_date: Date.now(),
+      reg_member_id: 2,
+    };
 
+    const updatedCount = await db.Member.update(editedMember, {
+      where: member_id,
+    });
 
-    // 
-    let index
-  
-  
-    for(let i = 0; i<channel.length; i++){
-      if(channel[i].community_id == community_id){
-        channel[i] = modifyChdata;
-        // console.log(channel[i])
-
-        apiResult.code = 200;
-        apiResult.data = channel;
-        apiResult.result = "OK";
-
-        res.json(apiResult);
-        index = i;
-        break;
-      }
-    }
-  
-  
-  
-    if(channel[index] == undefined){
-      res.send("해당 계정은 존재하지 않습니다.");
-    }
-
-  }catch(err){
+    apiResult.code = 200;
+    apiResult.data = updatedCount;
+    apiResult.result = "ok";
+  } catch (err) {
     apiResult.code = 500;
     apiResult.data = null;
     apiResult.result = "Failed";
   }
 
-})
-
+  res.json(apiResult);
+});
 
 // 계정 삭제
 // http://localhost:3000/api/member/delete
-router.post('/delete',async(req,res)=>{
-  let userid = req.body.userid;
-  let upassword = req.body.upassword;
+router.post("/delete", async (req, res) => {
+  const apiResult = {
+    code: 200,
+    data: [],
+    result: "ok",
+  };
 
-  
-  let index
+  try {
+    const member_id = req.query.aid;
 
-  for(let i = 0; i<member.length; i++){
-    if((member[i].userid == userid) && (member[i].upassword == upassword)){
-      member.splice(i, 1);
-      // console.log(channelData[i]);j
-      res.json(member);
-      index = i;
-      break;
-    }
+    var deletedCnt = await db.Member.destroy({ where: { member_id } });
+
+    apiResult.code = 200;
+    apiResult.data = deletedCnt;
+    apiResult.result = "ok";
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = "Failed";
   }
 
-
-
-  if(member[index] == undefined){
-    res.send("해당 계정은 존재하지 않습니다.");
-  }
+  res.json(apiResult);
 });
 
+// 단일 회원정보 데이터 조회
+// http://localhost:3000/api/member/mid
 
-  // 단일 회원정보 데이터 조회 
-// http://localhost:3000/api/member/cid
-router.get('/mid/:userid',async(req,res)=>{
-  let userid = req.params.userid;
+router.get("/:mid", async function (req, res, next) {
+  const apiResult = {
+    code: 200,
+    data: [],
+    result: "ok",
+  };
 
+  try {
+    const memberId = req.params.mid;
 
-  for(let i = 0; i<member.length; i++){
-    if(member[i].userid == userid){
-      res.json(member[i]);
-      break;
-    }
+    const member = await db.Member.findOne({ where: { memberId } });
+
+    apiResult.code = 200;
+    apiResult.data = member;
+    apiResult.result = "ok";
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = "Failed";
   }
-  
-})
 
-
-
-
+  res.json(apiResult);
+});
 
 module.exports = router;
