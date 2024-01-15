@@ -8,6 +8,8 @@ const { randomInt } = require('crypto');
 
 const jwt = require('jsonwebtoken');
 
+const bcrypt = require('bcryptjs');
+
 // 공통기능 제공 (로그인, 회원가입, 암호찾기)
 
 
@@ -170,7 +172,7 @@ router.post('/find',async(req, res)=>{
 
 // 암호 초기화 페이지 요청 및 응답
 router.get('/password-init', async(req,res)=>{
-  var token = req.headers.authorization;
+  var token = req.query.token;
 
 
 
@@ -187,16 +189,17 @@ router.post('/password-init', async(req,res,next)=>{
     data:"",
     msg:""
   }
+  
+  // 쿼리스트링으로 받은 토큰에서 해당 계정 데이터 찾기
+  var token = req.query.token;
 
 
   try{
     // 입력 값 받기
     var password = req.body.password;
   
-    // 쿼리스트링으로 받은 토큰에서 해당 계정 데이터 찾기
-    var token = req.query.token;
   
-    var tokenData = jwt.verify(token, process.env.JWT_KEY);
+    var tokenData = await jwt.verify(token, process.env.JWT_KEY);
   
     // DB에서 해당 토큰의 계정이 존재하는지 확인하기
     var checkTokenData = await db.Member.findOne({ where:{ member_id:tokenData.member_id } });
@@ -206,13 +209,18 @@ router.post('/password-init', async(req,res,next)=>{
       resultMsg.data = null,
       resultMsg.msg = "해당 토큰의 계정은 존재하지 않습니다."
 
-      res.redirect(`/forgot-password.html`);
+      res.json(resultMsg);
     }else{
       // 암호 변경 로직
-      checkTokenData.member_password = password;
+      var encryptPassword = await bcrypt.hash(password, 12);
 
-      await db.Member.updateOne(checkTokenData, { where:{ member_id:checkTokenData.member_id } });
-      res.redirect('/login.html');
+      var updatedMember = await db.Member.update({ member_password:encryptPassword }, { where:{ member_id:checkTokenData.member_id } });
+
+      resultMsg.code = 200;
+      resultMsg.data = updatedMember,
+      resultMsg.msg = "성공"
+
+      res.json(resultMsg);
     }
 
   }catch(err){
@@ -222,7 +230,7 @@ router.post('/password-init', async(req,res,next)=>{
     resultMsg.data = null,
     resultMsg.msg = "서버 에러"
 
-    res.redirect(`/password-init?token=${token}`);
+    res.json(resultMsg);
   }
 
 })
