@@ -6,6 +6,8 @@ var crypto = require('crypto')
 var db = require('../models/index');
 const { randomInt } = require('crypto');
 
+const jwt = require('jsonwebtoken');
+
 // 공통기능 제공 (로그인, 회원가입, 암호찾기)
 
 
@@ -166,7 +168,64 @@ router.post('/find',async(req, res)=>{
 });
 
 
+// 암호 초기화 페이지 요청 및 응답
+router.get('/password-init', async(req,res)=>{
+  var token = req.headers.authorization;
 
+
+
+  res.render('password-init', {token});
+})
+
+
+// 암호초기화 페이지 암호 초기화 처리
+// POST
+// http://lacalhost:3000/password-init?token=JWT
+router.post('/password-init', async(req,res,next)=>{
+  var resultMsg = {
+    code:200,
+    data:"",
+    msg:""
+  }
+
+
+  try{
+    // 입력 값 받기
+    var password = req.body.password;
+  
+    // 쿼리스트링으로 받은 토큰에서 해당 계정 데이터 찾기
+    var token = req.query.token;
+  
+    var tokenData = jwt.verify(token, process.env.JWT_KEY);
+  
+    // DB에서 해당 토큰의 계정이 존재하는지 확인하기
+    var checkTokenData = await db.Member.findOne({ where:{ member_id:tokenData.member_id } });
+  
+    if(checkTokenData == null){
+      resultMsg.code = 400;
+      resultMsg.data = null,
+      resultMsg.msg = "해당 토큰의 계정은 존재하지 않습니다."
+
+      res.redirect(`/forgot-password.html`);
+    }else{
+      // 암호 변경 로직
+      checkTokenData.member_password = password;
+
+      await db.Member.updateOne(checkTokenData, { where:{ member_id:checkTokenData.member_id } });
+      res.redirect('/login.html');
+    }
+
+  }catch(err){
+    console.log(err);
+
+    resultMsg.code = 500;
+    resultMsg.data = null,
+    resultMsg.msg = "서버 에러"
+
+    res.redirect(`/password-init?token=${token}`);
+  }
+
+})
 
 
 

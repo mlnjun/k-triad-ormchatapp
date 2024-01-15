@@ -14,48 +14,79 @@ const bcrypt = require('bcryptjs');
 
 router.post("/login", async function (req, res, next) {
   var apiResult = {
-    code: 200,
-    data: null,
-    result: "",
-  };
+    code:400,
+    data:null,
+    msg:""
+};
 
-  try {
-    // step1: 사용자 로그인 정보 추출하기
-    const { email, member_password } = req.body;
+try{
+  var email = req.body.email;
+  var password = req.body.password;
 
-    // step2: DB members테이블에서 동일한 메일주소의 단일 사용자 정보 조회
-    const member = await db.Member.findOne({ where: { email } });
+  var resultMsg = "";
+  
+  // step1 : 로그인(인증)-동일 메일주소 여부 체크
+  var member = await db.Member.findOne({ where:{ email:email } });
+  
 
-    // step3: 로그인 처리 로직 구현
-    var resultMsg = "";
+  if(member == null){
+    resultMsg = "NotExistEmail";
 
-    if (member == null) {
-      resultMsg = "동일한 메일주소가 존재하지 않습니다.";
-      apiResult.code = 400;
-      apiResult.data = null;
-      apiResult.result = resultMsg;
-    } else {
-      // DB서버에 저장되어 조회된 암호값과 사용자가 입력한 암호값이 일치하면
-      if (member.member_password == member_password) {
-        resultMsg = "로그인 성공";
-        apiResult.code = 200;
-        apiResult.data = member;
-        apiResult.result = resultMsg;
-      } else {
-        resultMsg = "암호가 일치하지 않습니다.";
-        apiResult.code = 400;
-        apiResult.data = null;
-        apiResult.result = resultMsg;
-      }
-    }
-  } catch (err) {
-    apiResult.code = 500;
+    apiResult.code = 400;  // 서버에 없는 자원 요청 오류코드
     apiResult.data = null;
-    apiResult.result = "서버에러발생 관리자에게 문의하세요.";
+    apiResult.msg = resultMsg;
+
+  }else{
+    // step2: 단방향 암호화 기반 동일암호 일치여부 체크
+    // 단방향 암호화 해시 알고리즘 암호 체크
+    var compareResult = await bcrypt.compare(password, member.member_password);
+
+    
+    if(compareResult){
+      resultMsg = "Ok";
+      
+      member.member_password = "";
+      member.telephone = AES.decrypt(member.telephone, process.env.MYSQL_AES_KEY);
+
+      // step3 : 인증된 사용자의 기본정보 JWT토큰 생성 발급
+      // step3.1 : JWT토큰에 담을 사용자 정보 생성
+      //JWT인증 사용자 정보 토큰 값 구조 정의 및 데이터 세팅
+      var memberTokenData = {
+        member_id:member.member_id,  // 구분되는 고유한 PK가 핵심
+        email:member.email,
+        name:member.name,
+        profile_img_path:member.profile_img_path,
+        telephone:member.telephone,
+        etc:"기타정보"
+      }
+
+      var token = await jwt.sign(memberTokenData, process.env.JWT_SECRET, {expiresIn:'24h', issuer:'company'});
+
+      apiResult.code = 200;
+      apiResult.data = token;
+      apiResult.msg = resultMsg;
+    }else{
+      resultMsg = "NotCorrectPassword";
+
+      apiResult.code = 500;
+      apiResult.data = null;
+      apiResult.msg = resultMsg;
+    }
   }
 
-  res.json(apiResult);
+
+}catch(err){
+  console.log('서버에러발생-/api/member/entry',err.message);
+
+  apiResult.code = 500;
+  apiResult.data = null;
+  apiResult.msg = "Failed";
+}
+
+
+res.json(apiResult);
 });
+
 
 router.post("/entry", async function (req, res, next) {
   var apiResult = {
@@ -97,6 +128,7 @@ router.post("/entry", async function (req, res, next) {
   res.json(apiResult);
 });
 
+
 router.post("/find", async (req, res) => {
   var apiResult = {
     code: 200,
@@ -107,6 +139,7 @@ router.post("/find", async (req, res) => {
   try {
     const email = req.body.email;
 
+    // 해당 이메일 계정 찾기
     const member = await db.Member.findOne({ where: { email } });
 
     var resultMsg = "";
@@ -117,9 +150,19 @@ router.post("/find", async (req, res) => {
       apiResult.data = null;
       apiResult.result = resultMsg;
     } else {
-      resultMsg = "암호 찾기 완료.";
+      // 토큰 데이터 생성
+      var memberTokenData = {
+        member_id:member.member_id,
+        email:member.email,
+        name:member.name
+      }
+
+      // 해당 계정 토큰 발급
+      var token = await jwt.sign(memberTokenData, process.env.JWT_KEY, {expiresIn:'24h', issuer:'k-triad'});
+
+      resultMsg = "해당 이메일 존재, 암호초기화 페이지 렌더";
       apiResult.code = 200;
-      apiResult.data = member.member_password;
+      apiResult.data = token;
       apiResult.result = resultMsg;
     }
   } catch (err) {
