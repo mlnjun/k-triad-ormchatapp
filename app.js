@@ -4,6 +4,9 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+// 환경설정파일 호출
+require('dotenv').config();
+
 // 레이아웃 패키지
 var expressLayouts = require('express-ejs-layouts');
 
@@ -26,9 +29,9 @@ app.set('view engine', 'ejs');
 
 // 레이아웃 설정
 app.set('layout', 'layout');
-app.set("layout extractScripts", true);
-app.set("layout extractStyles", true);
-app.set("layout extractMetas", true);
+app.set('layout extractScripts', true);
+app.set('layout extractStyles', true);
+app.set('layout extractMetas', true);
 app.use(expressLayouts);
 
 app.use(logger('dev'));
@@ -45,12 +48,12 @@ app.use('/api/channel', channelAPIRouter);
 app.use('/api/member', memberAPIRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
