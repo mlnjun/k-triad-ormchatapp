@@ -3,6 +3,12 @@ var router = express.Router();
 
 var db = require("../models");
 
+// jsonwebtoken패키지 참조
+const jwt = require('jsonwebtoken'); 
+
+// bcryptjs 패키지 참조
+const bcrypt = require('bcryptjs');
+
 //회원 정보 관리 RESTful API 라우팅 기능 제공
 // http://localhost:3000/api/member
 
@@ -287,5 +293,70 @@ router.get("/:mid", async function (req, res, next) {
 
   res.json(apiResult);
 });
+
+
+// 사용자 암호 체크 및 암호 변경 기능
+// http://localhost:3000/api/member/password/update
+// POST
+router.post("/password/update", async(res, req, next)=>{
+  var resultMsg = {
+    code:200,
+    data:"",
+    msg:""
+  }
+
+try{
+    // 사용자 암호 받기
+    var password = req.body.password;
+    var newPassword = req.body.newPassword;
+
+    // 토큰으로 사용자 정보 받기
+    var token = req.headers.authorization.split('Bearer ')[1];
+    var tokenData = await jwt.verify(token, process.env.JWT_KEY);
+    
+    
+    if(tokenData == null){
+      resultMsg.code = 400;
+      resultMsg.data = null;
+      resultMsg.msg = "해당 토큰의 회원은 존재하지 않습니다.";
+    }
+
+    var tokenMemberId = tokenData.member_id;
+
+
+    // 토큰으로 받은 사용자 DB에서 찾기
+    var userMember = await db.Member.findOne({ where : { member_id : tokenMemberId } });
+
+    var PWCompare = await bcrypt.compare(password, userMember.member_password);
+
+    // 암호 틀린 오류
+    if(!PWCompare){
+      resultMsg.code = 400;
+      resultMsg.data = null;
+      resultMsg.msg = "암호가 틀렸습니다.";
+    }else{  // 유저 입력 암호 일치 > 암호 변경
+      // 입력받은 새 암호 암호화
+      var encryptNewPW = await bcrypt.hash(newPassword, 12);
+
+      // 암호화된 새 암호 DB등록
+      userMember.member_password = encryptNewPW;
+      var updatedMember = await db.Member.update(userMember, { where:{ memberId:tokenMemberId } });
+
+      // 결과
+      resultMsg.code = 200;
+      resultMsg.data = updatedMember;
+      resultMsg.msg = "암호 변경 성공";
+    }
+
+  }catch(err){ 
+    // 서버에러
+    resultMsg.code = 500;
+    resultMsg.data = null;
+    resultMsg.msg = "서버 에러";
+  }
+
+
+  res.json(resultMsg);
+})
 
 module.exports = router;

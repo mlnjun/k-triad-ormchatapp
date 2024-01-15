@@ -1305,21 +1305,24 @@
 											<div id="changePwdCollapse" class="collapse" aria-labelledby="changePwd" data-parent="#settingsAccordion">
 
 												<div class="account-settings-body">
+
+													<form id="changePassword">
 													<div class="field-wrapper">
-														<input type="text" value="" />
-														<div class="field-placeholder">Current Password</div>
+														<input type="text" id="password" value="" />
+														<div class="field-placeholder">현재 암호</div>
 													</div>
 													<div class="field-wrapper">
-														<input type="password" value="" />
-														<div class="field-placeholder">New Password</div>
+														<input type="password" id="newPassword" value="" />
+														<div class="field-placeholder">새 암호</div>
 													</div>
 													<div class="field-wrapper m-0">
-														<input type="password" value="" />
-														<div class="field-placeholder">Confirm Password</div>
+														<input type="password" id="confirmNewPassword" value="" />
+														<div class="field-placeholder">새 암호 확인</div>
 													</div>
+													</form>
 
 													<div class="mt-3">
-														<button class="btn btn-primary btn-block">Change Password</button>
+														<button class="btn btn-primary btn-block">암호 변경</button>
 													</div>
 
 												</div>
@@ -1934,6 +1937,53 @@
 
 		<!-- Main Js Required -->
 		<script src="js/main.js"></script>
+
+
+		<!-- 프론트엔드 코드 -->
+		<script>
+
+			// #changePassword form태그 submit 이벤트
+			$('#changePassword').submit(function(){
+				// 새 암호, 새 암호 확인 입력 값 같은지 확인
+				if($('#newPassword').val() == $('#confirmNewPassword').val()){
+					// 사용자 입력 값 json 객체
+					var userPassword = {
+						"password":$('#password').val(),
+						"newPassword":$('#newPassword').val()
+					}
+
+					// 웹브라우저 로컬스토리지에 저장된 사용자 인증 JWT토큰정보 추출하기
+					var userToken = localStorage.getItem("userauthtoken");
+
+					// POST로 데이터 보내서 암호 변경
+					$.ajax({
+						type:"POST",
+						url:"/api/member/password/update",
+						headers:{
+							Authorization:`Bearer 1111${userToken}`,
+						},
+						dataType:"json",
+						data:userPassword,
+						success:function(result){
+
+							// 암호 변경 결과 알림
+							if(result.code == 200){
+									alert("암호 변경 성공");
+							}else if(result.code == 400){
+									alert("암호 변경 실패");
+							}else{
+									alert("암호 변경이 실패");
+							}
+
+							return false;
+						}
+					})
+				}
+
+				return false;
+			});
+
+		</script>
 
 	</body>
 </html>
