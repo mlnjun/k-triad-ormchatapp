@@ -20,10 +20,10 @@ db.sequelize = sequelize; //DB연결정보를 포함한 DB제어 객체속성(CR
 db.Sequelize = Sequelize; //Sequelize팩키지에서 제공하는 각종 데이터 타입 및 관련 객체정보를 제공함
 
 //회원모델 모듈파일 참조하고 db속성정의하기
-db.Member = require('./member.js')(sequelize, Sequelize);
-// db.Channel = require('./channel.js')(sequelize,Sequelize);
-// db.ChannelMember = require('./channelMember.js')(sequelize,Sequelize);
-// db.ChannelMessage = require('./channelMessage.js')(sequelize,Sequelize);
+db.Member = require('./member.js')(sequelize,Sequelize);
+db.Channel = require('./channel.js')(sequelize,Sequelize);
+db.ChannelMember = require('./channelMember.js')(sequelize,Sequelize);
+db.ChannelMessage = require('./channelMessage.js')(sequelize,Sequelize);
 
 //db객체 외부로 노출하기
 module.exports = db;

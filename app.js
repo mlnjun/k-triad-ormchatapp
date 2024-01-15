@@ -4,7 +4,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-// 환경설정파일 호출
+
+// dotenv 패키지 참조
 require('dotenv').config();
 
 // 레이아웃 패키지
