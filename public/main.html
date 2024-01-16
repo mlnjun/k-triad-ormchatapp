@@ -1420,7 +1420,7 @@
                 <!-- Account Settings Container End -->
 
                 <div class="save-btn-block">
-                  <button class="btn btn-primary btn-block">Save Changes</button>
+                  <button id="saveChangesBtn" class="btn btn-primary btn-block">Save Changes</button>
                 </div>
               </div>
               <!-- Account settings end -->
@@ -2028,11 +2028,12 @@
 
       // 설정 탭에 클릭이벤트가 발생하면 프로필 조회해서 각 영역 채우기
       $('#settings-tab').click(function () {
-        const loginUserToken = localStorage.getItem('userAuthToken');
+        const loginUserToken = localStorage.getItem('userauthtoken');
 
         $.ajax({
+          // 사용자 프로필 정보 불러오기
           type: 'GET',
-          url: '/api/member/profile', // 사용자 프로필 정보 불러오기
+          url: '/api/member/profile',
           headers: {
             Authorization: `Bearer ${loginUserToken}`,
           },
@@ -2047,6 +2048,59 @@
               $('#userProfileImage').attr('src', result.data.profile_img_path);
             } else if (result.code == 400) {
               alert(result.msg);
+            }
+          },
+          error: function (err) {
+            console.log('api 호출 에러: ', err);
+          },
+        });
+      });
+
+      // '프로필 수정 버튼'에 클릭이벤트 발생시 사용자 정보 수정 요청
+      $('#saveChangesBtn').click(function () {
+        // 입력값 추출
+        const email = $('#userProfileEmail').val();
+        const name = $('#userProfileName').val();
+        const telephone = $('#userProfileTelephone').val();
+
+        // 빈칸 체크
+        if (!email) {
+          alert('이메일을 입력해주세요.');
+          $('#userProfileEmail').focus();
+          return false;
+        } else if (!name) {
+          alert('이름을 입력해주세요.');
+          $('#userProfileName').focus();
+          return false;
+        } else if (!telephone) {
+          alert('전화번호를 입력해주세요.');
+          $('#userProfileTelephone').focus();
+          return false;
+        }
+
+        const loginUserToken = localStorage.getItem('userauthtoken');
+
+        $.ajax({
+          // 사용자 프로필 수정 요청
+          type: 'POST',
+          url: '/api/member/modify',
+          headers: {
+            Authorization: `Bearer ${loginUserToken}`,
+          },
+          data: {
+            email,
+            name,
+            telephone,
+          },
+          dataType: 'json',
+          success: function (result) {
+            console.log('회원 프로필 수정 결과값 확인: ', result);
+            if (result.code == 200) {
+              //토큰 받은걸로다가 localStorage 수정하기!!!!!!
+              localStorage.setItem('userauthtoken', result.data);
+              alert('프로필 정보가 수정되었습니다.');
+            } else {
+              alert('프로필 정보가 수정 중 문제가 발생했습니다.');
             }
           },
           error: function (err) {
