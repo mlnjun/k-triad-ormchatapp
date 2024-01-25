@@ -175,7 +175,6 @@ router.get('/password-init', async(req,res)=>{
   var token = req.query.token;
 
 
-
   res.render('password-init', {token});
 })
 
@@ -191,7 +190,7 @@ router.post('/password-init', async(req,res,next)=>{
   }
   
   // 쿼리스트링으로 받은 토큰에서 해당 계정 데이터 찾기
-  var token = req.query.token;
+  var token = req.body.token;
 
 
   try{
@@ -204,13 +203,13 @@ router.post('/password-init', async(req,res,next)=>{
     // DB에서 해당 토큰의 계정이 존재하는지 확인하기
     var checkTokenData = await db.Member.findOne({ where:{ member_id:tokenData.member_id } });
   
-    if(checkTokenData == null){
+    if(checkTokenData == null){  // 토큰의 계정정보 DB에 존재하지 않음
       resultMsg.code = 400;
       resultMsg.data = null,
       resultMsg.msg = "해당 토큰의 계정은 존재하지 않습니다."
 
       res.json(resultMsg);
-    }else{
+    }else{  // DB에 토큰의 계정정보 존재
       // 암호 변경 로직
       var encryptPassword = await bcrypt.hash(password, 12);
 

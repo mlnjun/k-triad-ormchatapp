@@ -12,6 +12,9 @@ const AES = require('mysql-aes');
 // jsonwebtoken패키지 참조
 const jwt = require('jsonwebtoken');
 
+// 토큰 인증 미들웨어 참조
+var {tokenAuthChecking} = require('./apiMiddleware');
+
 //회원 정보 관리 RESTful API 라우팅 기능 제공
 // http://localhost:3000/api/member
 
@@ -179,7 +182,7 @@ router.post('/find', async (req, res) => {
         name:member.name
       };
 
-      var token = await jwt.sign(tokenData ,process.env.JWT_KEY);
+      var token = await jwt.sign(tokenData ,process.env.JWT_KEY, {expiresIn:'20m', issuer:'k-triad'});
 
       resultMsg = "암호 찾기 완료.";
       apiResult.code = 200;
@@ -360,7 +363,7 @@ router.get('/:mid', async (req, res, next)=> {
 // 사용자 암호 체크 및 암호 변경 기능
 // http://localhost:3000/api/member/password/update
 // POST
-router.post('/password/update', async (req, res, next) => {
+router.post('/password/update', tokenAuthChecking, async (req, res, next) => {
   var resultMsg = {
     code: 200,
     data: '',
@@ -376,16 +379,9 @@ router.post('/password/update', async (req, res, next) => {
     var token = req.headers.authorization.split('Bearer ')[1];
     var tokenData = await jwt.verify(token, process.env.JWT_KEY);
 
-    if (tokenData == undefined) {
-      resultMsg.code = 400;
-      resultMsg.data = null;
-      resultMsg.msg = '해당 토큰의 회원은 존재하지 않습니다.';
-    }
-
-    var tokenMemberId = tokenData.member_id;
 
     // 토큰으로 받은 사용자 DB에서 찾기
-    var userMember = await db.Member.findOne({ where: { member_id: tokenMemberId } });
+    var userMember = await db.Member.findOne({ where: { member_id: tokenData.member_id } });
 
     var PWCompare = await bcrypt.compare(password, userMember.member_password);
 
@@ -396,12 +392,12 @@ router.post('/password/update', async (req, res, next) => {
       resultMsg.msg = '암호가 틀렸습니다.';
     } else {
       // 유저 입력 암호 일치 > 암호 변경
+
       // 입력받은 새 암호 암호화
       var encryptNewPW = await bcrypt.hash(newPassword, 12);
 
       // 암호화된 새 암호 DB등록
-      userMember.member_password = encryptNewPW;
-      var updatedMember = await db.Member.update({member_password:encryptNewPW}, { where: { member_id : tokenMemberId } });
+      var updatedMember = await db.Member.update({member_password:encryptNewPW}, { where: { member_id : tokenData.member_id } });
 
       // 결과
       resultMsg.code = 200;
