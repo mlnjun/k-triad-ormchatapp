@@ -335,7 +335,6 @@ router.post('/delete', async (req, res) => {
 
 // 단일 회원정보 데이터 조회
 // http://localhost:3000/api/member/mid
-
 router.get('/:mid', async (req, res, next)=> {
   const apiResult = {
     code: 200,
@@ -346,7 +345,7 @@ router.get('/:mid', async (req, res, next)=> {
   try {
     const memberId = req.params.mid;
 
-    const member = await db.Member.findOne({ where: { memberId } });
+    const member = await db.Member.findOne({ where: { member_id:memberId } });
 
     apiResult.code = 200;
     apiResult.data = member;
@@ -359,6 +358,37 @@ router.get('/:mid', async (req, res, next)=> {
 
   res.json(apiResult);
 });
+
+
+// email로 단일 회원정보 데이터 조회
+// http://localhost:3000/api/member/invite
+router.post('/invite', async (req, res, next)=> {
+  const apiResult = {
+    code: 200,
+    data: null,
+    result: 'ok',
+  };
+
+  try {
+    const email = req.body.email;
+
+    const inviteMember = await db.Member.findOne({
+      where: { email },
+      attributes: ['member_id', 'email', 'name', 'profile_img_path', 'use_state_code']
+    });
+
+    apiResult.code = 200;
+    apiResult.data = inviteMember;
+    apiResult.result = 'ok';
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = 'Failed';
+  }
+
+  res.json(apiResult);
+});
+
 
 // 사용자 암호 체크 및 암호 변경 기능
 // http://localhost:3000/api/member/password/update

@@ -8,6 +8,9 @@ var app = require('../app');
 var debug = require('debug')('nodechatapp:server');
 var http = require('http');
 
+// socket.js 참조
+const webSocket = require("../socket");
+
 /**
  * Get port from environment and store in Express.
  */
@@ -28,6 +31,9 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+// express서버와 웹소켓 연결
+webSocket(server);
 
 /**
  * Normalize a port into a number, string, or false.

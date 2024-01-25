@@ -38,7 +38,7 @@ module.exports = function (sequelize, DataTypes) {
       },
       channel_desc: {
         type: DataTypes.STRING(1000),
-        allowNull: false,
+        allowNull: true,
         comment: '채널 설명',
       },
       channel_state_code: {
