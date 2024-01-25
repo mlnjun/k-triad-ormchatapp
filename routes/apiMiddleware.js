@@ -20,12 +20,20 @@ exports.tokenAuthChecking = async(req, res, next) =>{
   
   
   try{
-    let token = req.headers.authorization.split('Bearer ')[1];
-    let tokenData = await jwt.verify(token, process.env.JWT_KEY);
+    var token = req.headers.authorization.split('Bearer ')[1];
+    var tokenData = await jwt.verify(token, process.env.JWT_KEY);
     
     // 토큰의 데이터가 유효함 > 라우팅 메소드 계속 진행
     if(tokenData != null){
+      req.tokenData = tokenData;
       next();
+    }else{
+      // 토큰 데이터가 유효하지 않음
+      resultMsg.code = 400;
+      resultMsg.data = null;
+      resultMsg.msg = '토큰의 데이터가 유효하지 않습니다.';
+      
+      res.json(resultMsg);
     }
 
   }catch(err){
