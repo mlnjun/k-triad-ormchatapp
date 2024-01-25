@@ -1990,6 +1990,7 @@
     <!-- *************
 			************ Vendor Js Files *************
 		************* -->
+    <<<<<<< HEAD
     <!-- Slimscroll JS -->
     <script src="vendor/slimscroll/slimscroll.min.js"></script>
     <script src="vendor/slimscroll/custom-scrollbar.js"></script>
@@ -2027,9 +2028,11 @@
             success: function (result) {
               // 암호 변경 결과 알림
               if (result.code == 200) {
-                alert('암호 변경 성공');
+                alert(result.msg);
               } else if (result.code == 400) {
-                alert('암호 변경 실패');
+                alert(result.msg);
+              } else if (result.code == 500) {
+                alert(result.msg);
               } else {
                 alert('암호 변경이 실패했습니다.');
               }
@@ -2037,8 +2040,11 @@
               return false;
             },
           });
+        } else {
+          // 암호, 암호 재확인 값이 다른 오류
+          alert('암호와 암호 재확인 값이 다릅니다.');
+          $('#confirmNewPassword').focus();
         }
-
         return false;
       });
 

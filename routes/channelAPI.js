@@ -2,6 +2,46 @@ var express = require('express');
 var router = express.Router();
 
 
+// DB 참조
+var db = require('../models/index');
+
+var Op = db.Sequelize.Op;
+var sequelize = db.sequelize
+const {QueryTypes} = sequelize
+
+// 단방향 암호화를 위한 bcrypt 패키지 참조 (비밀번호와 같은 민감한 정보를 안전하게 저장)
+const bcrypt = require('bcryptjs');
+
+// 양방향 암호화 및 복호화를 위한 mysql-aes 패키지 참조
+const AES = require('mysql-aes');
+
+// jsonwebtoken패키지 참조
+const jwt = require('jsonwebtoken');
+
+// multer 패키지 참조
+var multer = require('multer');
+
+// moment 패키지 참조
+const moment = require('moment');
+
+// -파일저장위치 지정 (해당 라우터)
+var storage  = multer.diskStorage({ 
+    destination(req, file, cb) {
+      cb(null, 'public/upload/channel/');
+    },
+    filename(req, file, cb) {
+      cb(null, `${moment(Date.now()).format('YYYYMMddHHmmss')}__${file.originalname}`);
+    },
+  });
+
+
+//일반 업로드처리 객체 생성
+var upload = multer({ storage: storage });
+
+// 토큰 인증 미들웨어 참조
+var {tokenAuthChecking} = require('./apiMiddleware');
+
+
 /*
 - 채널/채팅 정보 관리 RESTful API 라우팅 기능 제공
 http://localhost:3000/api/channel
@@ -10,55 +50,27 @@ http://localhost:3000/api/channel
 
 var apiResult = {
   code:200,
-  data:[],
-  result:"OK"
+  data:null,
+  msg:"OK"
 }
-
-
-
-// 채널 데이터
-var channel = [
-  {
-    community_id:1,
-    category_code:1,
-    channel_name:"채팅방1",
-    user_limit:2,
-    channel_desc:"채팅방1 입니다.",
-    channel_state_code:1,
-    reg_date:Date.now(),
-    reg_member_id:"A"
-  },
-  {
-    community_id:2,
-    category_code:2,
-    channel_name:"채팅방2",
-    user_limit:3,
-    channel_desc:"채팅방2 입니다.",
-    channel_state_code:2,
-    reg_date:Date.now(),
-    reg_member_id:"B"
-  },
-  {
-    community_id:3,
-    category_code:1,
-    channel_name:"채팅방3",
-    user_limit:2,
-    channel_desc:"채팅방3 입니다.",
-    channel_state_code:1,
-    reg_date:Date.now(),
-    reg_member_id:"C"
-  }
-]
 
 
 // 채널 정보 관리 RESTful API 라우팅 기능 제공
 // http://localhost:3000/api/channel/all
 router.get('/all',async(req, res)=>{
 
+  try{
 
-  apiResult.code = 200;
-  apiResult.data = channel;
-  apiResult.result = "OK";
+    var channels = await db.channel.find({});
+
+    apiResult.code = 200;
+    apiResult.data = channels;
+    apiResult.msg = "생성 완료";
+  }catch(err){
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.msg = "서버 에러";
+  }
 
   res.json(apiResult);
 });
@@ -91,12 +103,12 @@ router.post('/create',async(req,res)=>{
 
     apiResult.code = 200;
     apiResult.data = newChdata;
-    apiResult.result = "OK";
+    apiResult.msg = "OK";
 
   }catch(err){
     apiResult.code = 500;
     apiResult.data = null;
-    apiResult.result = "Failed";
+    apiResult.msg = "Failed";
   }
 
 
@@ -150,7 +162,7 @@ router.post('/modify/:cid',async(req,res)=>{
 
         apiResult.code = 200;
         apiResult.data = channel;
-        apiResult.result = "OK";
+        apiResult.msg = "OK";
 
         res.json(apiResult);
         index = i;
@@ -167,7 +179,7 @@ router.post('/modify/:cid',async(req,res)=>{
   }catch(err){
     apiResult.code = 500;
     apiResult.data = null;
-    apiResult.result = "Failed";
+    apiResult.msg = "Failed";
   }
 
 })
@@ -192,7 +204,7 @@ router.delete('/delete/:cid',async(req,res)=>{
 
         apiResult.code = 200;
         apiResult.data = channel;
-        apiResult.result = "OK";
+        apiResult.msg = "OK";
         
         index = i;
 
@@ -209,8 +221,162 @@ router.delete('/delete/:cid',async(req,res)=>{
   }catch(err){
     apiResult.code = 500;
     apiResult.data = null;
-    apiResult.result = "Failed";
+    apiResult.msg = "Failed";
   }
+});
+
+
+// 채널 프로필 이미지 경로 전달
+// http://localhost:3000/api/channel/uploadprofile
+router.post('/uploadprofile', upload.single('file'), async(req,res,next)=>{
+  
+    try{
+    // 파일 받기
+    const profile = req.file
+
+    // 받은 데이터 존재 확인
+    if(profile != null){
+      // 데이터 존재
+      // 파일 경로
+      var filePath ="/upload/channel/"+uploadFile.filename;
+
+      // 결과
+      apiResult.code = 200;
+      apiResult.data = filePath;
+      apiResult.msg = "프로필파일 경로 전달 완료";
+  
+    }else{
+      // 파일 데이터 들어오지 않음
+      apiResult.code = 400;
+      apiResult.data = null;
+      apiResult.msg = "파일 데이터가 전달되지 않았습니다.";
+    }
+    
+  }catch(err){
+    // 서버오류
+      apiResult.code = 500;
+      apiResult.data = null;
+      apiResult.msg = "서버 오류";
+  }
+
+  res.json(apiResult);
+});
+
+
+// 그룹 채팅 생성
+// http://localhost:3000/api/channel/addchatgroup
+router.post('/addchatgroup', tokenAuthChecking, async(req,res,next)=>{
+  
+  try{
+    // 데이터 받기
+    var inviteMember = req.body.members;
+    var profilePath = req.body.profile;
+    var channelName = req.body.channelName;
+    // 토큰 데이터 추출
+    var tokenData = req.tokenData;
+    
+    // 채널 이름 중복 체크
+    var isNameSame = await db.Channel.findOne({where:{channel_name:channelName}});
+    
+    
+    if(isNameSame == null){
+      // 채널 이름 중복 X > 정상 진행
+      
+      // channel 데이터 DB에 넣기
+      var channelData = {
+        comunity_id:1,
+        category_code:2,
+        channel_name:channelName,
+        user_limit:inviteMember.length+1,
+        channel_img_path:profilePath,
+        channel_desc:"",
+        channel_state_code:1,
+        reg_date:Date.now(),
+        reg_member_id:tokenData.member_id
+      };
+      // 채널 생성
+      await db.Channel.create(channelData);
+      // 채널 데이터 받기
+      var channel = await db.Channel.findOne({where:{channel_name:channelName}});
+      
+      
+      // channelMember DB에 넣기
+      // 관리자(채널 생성자) 데이터
+      var channelMember = {
+        channel_id:channel.channel_id,
+        member_id:tokenData.member_id,
+        nick_name:tokenData.name,
+        member_type_code:1,
+        active_state_code:1,
+      }
+      
+      await db.ChannelMember.create(channelMember);
+      
+      // 모든 초대된 사용자 DB에 추가
+      for(let i = 0; i < inviteMember.length; i++){
+        // 사용자 데이터
+        var channelMember = {
+          channel_id:channel.channel_id,
+          member_id:inviteMember[i].member_id,
+          nick_name:inviteMember[i].name,
+          member_type_code:0,
+          active_state_code:1,
+        }
+
+        // DB에 추가
+        await db.ChannelMember.create(channelMember)
+      };
+
+      
+      apiResult.code = 200;
+      apiResult.data = null;
+      apiResult.msg = "생성 완료";
+      
+    }else{
+      // 채널 이름 중복
+      apiResult.code = 400;
+      apiResult.data = null;
+      apiResult.msg = "동일한 그룹 이름이 존재합니다.";
+    }
+    
+    
+    
+  }catch(err){
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.msg = "서버에러";
+  }
+
+  res.json(apiResult);
+});
+
+
+// 해당 유저가 참가한 모든 그룹채팅 조회
+// http://localhost:3000/api/channel/channelsByMember
+router.post('/channelsByMember', tokenAuthChecking, async(req,res,next)=>{
+
+  try{
+    // 쿼리로 해당 유저가 속한 채널 데이터 찾기
+    const sqlQuery = `SELECT * FROM channel WHERE channel_id IN(SELECT channel_id FROM channel_member WHERE member_id=${req.tokenData})ORDER BY channel_id DESC;`
+
+    var userChannels = await sequelize.query(sqlQuery,{
+      raw: true,
+      type: QueryTypes.SELECT,
+    });
+
+    apiResult.code = 200;
+    apiResult.data = userChannels;
+    apiResult.msg = "OK";
+
+  }catch(err){
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.msg = "서버에러";
+  }
+
+
+  res.json(apiResult);
+
 });
 
 
@@ -234,8 +400,7 @@ router.get('/:cid',async(req, res)=>{
     res.send("해당 계정은 존재하지 않습니다.");
   }
 
-})
-
+});
 
 
 module.exports = router;
