@@ -144,7 +144,9 @@ function renderInviteMembers(members) {
 
 function clearGroupChatForm() {
   console.log('clearGroupChatForm');
+
   $('#uploadGroupChatImg').val('');
+  document.getElementById('previewImage').src = 'img/group2.svg';
   $('#invitedMemberEmail').val('');
   $('#channel_name').val('');
   invitedMembers = [];

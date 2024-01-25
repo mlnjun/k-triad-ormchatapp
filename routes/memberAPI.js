@@ -255,7 +255,7 @@ router.post('/create', async function (req, res, next) {
 });
 
 // 사용자 프로필 조회
-router.get('/profile', tokenAuthchecking, async (req, res, next) => {
+router.get('/profile', tokenAuthChecking, async (req, res, next) => {
   var apiResult = {
     code: 400,
     data: null,
@@ -286,7 +286,7 @@ router.get('/profile', tokenAuthchecking, async (req, res, next) => {
 });
 
 // 사용자 프로필 수정 기능
-router.post('/modify', tokenAuthchecking, async (req, res, next) => {
+router.post('/modify', tokenAuthChecking, async (req, res, next) => {
   var apiResult = {
     code: 200,
     data: null,
