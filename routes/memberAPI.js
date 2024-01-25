@@ -296,8 +296,7 @@ router.post('/modify', tokenAuthchecking, async (req, res, next) => {
   try {
     const { email, name, telephone } = req.body;
 
-    // res.locals.tokenData에 검증된 토큰 정보가 들어있음
-    const tokenJsonData = res.locals.tokenData;
+    const tokenJsonData = req.tokenData;
 
     // 사용자 입력 데이터 양방향 암호화 적용
     // AES.encrypt(암호화할 데이터, 암호화에 사용할 키)
