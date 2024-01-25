@@ -12,83 +12,80 @@ const AES = require('mysql-aes');
 // jsonwebtoken패키지 참조
 const jwt = require('jsonwebtoken');
 
+// 사용자 토큰 제공여부 체크 미들웨어 참조하기
+const { tokenAuthchecking } = require('./apiMiddleware');
+
 //회원 정보 관리 RESTful API 라우팅 기능 제공
 // http://localhost:3000/api/member
 
 router.post('/login', async function (req, res, next) {
   var apiResult = {
-    code:400,
-    data:null,
-    msg:""
-};
+    code: 400,
+    data: null,
+    msg: '',
+  };
 
-try{
-  var email = req.body.email;
-  var password = req.body.password;
+  try {
+    var email = req.body.email;
+    var password = req.body.password;
 
-  var resultMsg = "";
-  
-  // step1 : 로그인(인증)-동일 메일주소 여부 체크
-  var member = await db.Member.findOne({ where:{ email:email } });
-  
+    var resultMsg = '';
 
-  if(member == null){
-    resultMsg = "NotExistEmail";
+    // step1 : 로그인(인증)-동일 메일주소 여부 체크
+    var member = await db.Member.findOne({ where: { email: email } });
 
-    apiResult.code = 400;  // 서버에 없는 자원 요청 오류코드
-    apiResult.data = null;
-    apiResult.msg = resultMsg;
+    if (member == null) {
+      resultMsg = 'NotExistEmail';
 
-  }else{
-    // step2: 단방향 암호화 기반 동일암호 일치여부 체크
-    // 단방향 암호화 해시 알고리즘 암호 체크
-    var compareResult = await bcrypt.compare(password, member.member_password);
-
-    
-    if(compareResult){
-      resultMsg = "Ok";
-      
-      member.member_password = "";
-      member.telephone = AES.decrypt(member.telephone, process.env.MYSQL_AES_KEY);
-
-      // step3 : 인증된 사용자의 기본정보 JWT토큰 생성 발급
-      // step3.1 : JWT토큰에 담을 사용자 정보 생성
-      //JWT인증 사용자 정보 토큰 값 구조 정의 및 데이터 세팅
-      var memberTokenData = {
-        member_id:member.member_id,  // 구분되는 고유한 PK가 핵심
-        email:member.email,
-        name:member.name,
-        profile_img_path:member.profile_img_path,
-        telephone:member.telephone,
-        etc:"기타정보"
-      }
-
-      var token = await jwt.sign(memberTokenData, process.env.JWT_KEY, {expiresIn:'24h', issuer:'company'});
-
-      apiResult.code = 200;
-      apiResult.data = token;
-      apiResult.msg = resultMsg;
-    }else{
-      resultMsg = "NotCorrectPassword";
-
-      apiResult.code = 500;
+      apiResult.code = 400; // 서버에 없는 자원 요청 오류코드
       apiResult.data = null;
       apiResult.msg = resultMsg;
+    } else {
+      // step2: 단방향 암호화 기반 동일암호 일치여부 체크
+      // 단방향 암호화 해시 알고리즘 암호 체크
+      var compareResult = await bcrypt.compare(password, member.member_password);
+
+      if (compareResult) {
+        resultMsg = 'Ok';
+
+        member.member_password = '';
+        member.telephone = AES.decrypt(member.telephone, process.env.MYSQL_AES_KEY);
+
+        // step3 : 인증된 사용자의 기본정보 JWT토큰 생성 발급
+        // step3.1 : JWT토큰에 담을 사용자 정보 생성
+        //JWT인증 사용자 정보 토큰 값 구조 정의 및 데이터 세팅
+        var memberTokenData = {
+          member_id: member.member_id, // 구분되는 고유한 PK가 핵심
+          email: member.email,
+          name: member.name,
+          profile_img_path: member.profile_img_path,
+          telephone: member.telephone,
+          etc: '기타정보',
+        };
+
+        var token = await jwt.sign(memberTokenData, process.env.JWT_KEY, { expiresIn: '24h', issuer: 'company' });
+
+        apiResult.code = 200;
+        apiResult.data = token;
+        apiResult.msg = resultMsg;
+      } else {
+        resultMsg = 'NotCorrectPassword';
+
+        apiResult.code = 500;
+        apiResult.data = null;
+        apiResult.msg = resultMsg;
+      }
     }
+  } catch (err) {
+    console.log('서버에러발생-/api/member/login', err.message);
+
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.msg = 'Failed';
   }
 
-
-}catch(err){
-  console.log('서버에러발생-/api/member/entry',err.message);
-
-  apiResult.code = 500;
-  apiResult.data = null;
-  apiResult.msg = "Failed";
-}
-
-res.json(apiResult);
+  res.json(apiResult);
 });
-
 
 router.post('/entry', async function (req, res, next) {
   var apiResult = {
@@ -151,7 +148,6 @@ router.post('/entry', async function (req, res, next) {
   res.json(apiResult);
 });
 
-
 router.post('/find', async (req, res) => {
   var apiResult = {
     code: 200,
@@ -174,14 +170,14 @@ router.post('/find', async (req, res) => {
       apiResult.result = resultMsg;
     } else {
       var tokenData = {
-        member_id:member.member_id,
-        email:member.email,
-        name:member.name
+        member_id: member.member_id,
+        email: member.email,
+        name: member.name,
       };
 
-      var token = await jwt.sign(tokenData ,process.env.JWT_KEY);
+      var token = await jwt.sign(tokenData, process.env.JWT_KEY);
 
-      resultMsg = "암호 찾기 완료.";
+      resultMsg = '암호 찾기 완료.';
       apiResult.code = 200;
       apiResult.data = token;
       apiResult.result = resultMsg;
@@ -194,10 +190,9 @@ router.post('/find', async (req, res) => {
   res.json(apiResult);
 });
 
-
 // http://localhost:3000/api/member/all
 // 전체 회원목록 데이터 조회 GET 요청 - 전체 회원 목록 데이터 응답
-router.get('/all', async (req, res, next)=> {
+router.get('/all', async (req, res, next) => {
   const apiResult = {
     code: 200,
     data: [],
@@ -251,6 +246,95 @@ router.post('/create', async function (req, res, next) {
     apiResult.data = member;
     apiResult.result = 'ok';
   } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = '서버에러발생 관리자에게 문의하세요.';
+  }
+
+  res.json(apiResult);
+});
+
+// 사용자 프로필 조회
+router.get('/profile', tokenAuthchecking, async (req, res, next) => {
+  var apiResult = {
+    code: 400,
+    data: null,
+    result: '',
+  };
+
+  try {
+    // res.locals.tokenJsonData에 검증된 토큰 정보가 들어있음
+    const loginMemberId = res.locals.tokenData.member_id;
+
+    const dbMember = await db.Member.findOne({
+      where: { member_id: loginMemberId },
+      attributes: ['profile_img_path', 'name', 'email', 'telephone', 'birth_date'],
+    });
+
+    dbMember.telephone = AES.decrypt(dbMember.telephone, process.env.MYSQL_AES_KEY);
+
+    apiResult.code = 200;
+    apiResult.data = dbMember;
+    apiResult.result = 'member profile ok';
+  } catch (err) {
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.result = '서버에러발생 관리자에게 문의하세요.';
+  }
+
+  res.json(apiResult);
+});
+
+// 사용자 프로필 수정 기능
+router.post('/modify', tokenAuthchecking, async (req, res, next) => {
+  var apiResult = {
+    code: 200,
+    data: null,
+    result: '',
+  };
+
+  try {
+    const { email, name, telephone } = req.body;
+
+    // res.locals.tokenData에 검증된 토큰 정보가 들어있음
+    const tokenJsonData = res.locals.tokenData;
+
+    // 사용자 입력 데이터 양방향 암호화 적용
+    // AES.encrypt(암호화할 데이터, 암호화에 사용할 키)
+    var encryptTelephone = AES.encrypt(telephone, process.env.MYSQL_AES_KEY);
+
+    // DB에 사용자 정보 데이터 업데이트
+    const updatedCount = await db.Member.update(
+      { email, name, telephone: encryptTelephone },
+      { where: { member_id: tokenJsonData.member_id } },
+    );
+
+    // updatedCount가 1이면 정상임
+    if (updatedCount == 1) {
+      //변경된 데이터 기반 JWT인증 사용자 정보 토큰 값 구조 정의 및 데이터 세팅
+      var memberTokenData = {
+        member_id: tokenJsonData.member_id, // 구분되는 고유한 PK가 핵심
+        email,
+        name,
+        profile_img_path: tokenJsonData.profile_img_path,
+        telephone,
+        etc: tokenJsonData.etc,
+      };
+
+      // 변경된 데이터 기반 JWT 생성
+      var token = await jwt.sign(memberTokenData, process.env.JWT_KEY, { expiresIn: '24h', issuer: 'company' });
+
+      apiResult.code = 200;
+      apiResult.data = token;
+      apiResult.result = 'ok';
+    } else {
+      console.log('서버에러- api/member/modify POST: DB 데이터 업데이트 중 문제발생');
+      apiResult.code = 500;
+      apiResult.data = null;
+      apiResult.result = '서버에러발생 관리자에게 문의하세요.';
+    }
+  } catch (err) {
+    console.log('서버에러- api/member/modify', err);
     apiResult.code = 500;
     apiResult.data = null;
     apiResult.result = '서버에러발생 관리자에게 문의하세요.';
@@ -333,7 +417,7 @@ router.post('/delete', async (req, res) => {
 // 단일 회원정보 데이터 조회
 // http://localhost:3000/api/member/mid
 
-router.get('/:mid', async (req, res, next)=> {
+router.get('/:mid', async (req, res, next) => {
   const apiResult = {
     code: 200,
     data: [],
@@ -401,7 +485,10 @@ router.post('/password/update', async (req, res, next) => {
 
       // 암호화된 새 암호 DB등록
       userMember.member_password = encryptNewPW;
-      var updatedMember = await db.Member.update({member_password:encryptNewPW}, { where: { member_id : tokenMemberId } });
+      var updatedMember = await db.Member.update(
+        { member_password: encryptNewPW },
+        { where: { member_id: tokenMemberId } },
+      );
 
       // 결과
       resultMsg.code = 200;
