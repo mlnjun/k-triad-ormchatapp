@@ -1966,7 +1966,6 @@
     <!-- *************
 			************ Vendor Js Files *************
 		************* -->
-    <<<<<<< HEAD
     <!-- Slimscroll JS -->
     <script src="vendor/slimscroll/slimscroll.min.js"></script>
     <script src="vendor/slimscroll/custom-scrollbar.js"></script>
@@ -1979,6 +1978,31 @@
 
     <!-- 프론트엔드 코드 -->
     <script>
+      let userProfileInfo;
+
+      const loginUserToken = localStorage.getItem('userauthtoken');
+
+      $.ajax({
+        // 사용자 프로필 정보 불러오기
+        type: 'GET',
+        url: '/api/member/profile',
+        headers: {
+          Authorization: `Bearer ${loginUserToken}`,
+        },
+        dataType: 'json',
+        success: function (result) {
+          console.log('현재 사용자 정보 호출 결과: ', result);
+          if (result.code == 200) {
+            userProfileInfo = result.data;
+          } else if (result.code == 400) {
+            alert(result.msg);
+          }
+        },
+        error: function (err) {
+          console.log('api 호출 에러: ', err);
+        },
+      });
+
       // #changePassword form태그 submit 이벤트
       $('#changePassword').submit(function () {
         // 새 암호, 새 암호 확인 입력 값 같은지 확인
@@ -2026,32 +2050,10 @@
 
       // 설정 탭에 클릭이벤트가 발생하면 프로필 조회해서 각 영역 채우기
       $('#settings-tab').click(function () {
-        const loginUserToken = localStorage.getItem('userauthtoken');
-
-        $.ajax({
-          // 사용자 프로필 정보 불러오기
-          type: 'GET',
-          url: '/api/member/profile',
-          headers: {
-            Authorization: `Bearer ${loginUserToken}`,
-          },
-          dataType: 'json',
-          success: function (result) {
-            console.log('현재 사용자 정보 호출 결과: ', result);
-            if (result.code == 200) {
-              // 불러온 프로필 정보 돔에 뿌리기
-              $('#userProfileEmail').val(result.data.email);
-              $('#userProfileName').val(result.data.name);
-              $('#userProfileTelephone').val(result.data.telephone);
-              $('#userProfileImage').attr('src', result.data.profile_img_path);
-            } else if (result.code == 400) {
-              alert(result.msg);
-            }
-          },
-          error: function (err) {
-            console.log('api 호출 에러: ', err);
-          },
-        });
+        $('#userProfileEmail').val(userProfileInfo.email);
+        $('#userProfileName').val(userProfileInfo.name);
+        $('#userProfileTelephone').val(userProfileInfo.telephone);
+        $('#userProfileImage').attr('src', userProfileInfo.profile_img_path);
       });
 
       // '프로필 수정 버튼'에 클릭이벤트 발생시 사용자 정보 수정 요청
