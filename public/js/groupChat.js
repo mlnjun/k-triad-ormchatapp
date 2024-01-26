@@ -1,6 +1,5 @@
 let invitedMembers = [];
 let chatProfileImagePath = null;
-const loginUserToken = localStorage.getItem('userAuthToken');
 
 // 그룹챗 모달 닫기버튼 누르거나 모달 바깥영역 누르면 폼 초기화하기
 $('#GroupChatFormModalCloseBtn').click(clearGroupChatForm);
@@ -20,10 +19,18 @@ $('#uploadGroupChatImg').change(function () {
 });
 
 // 이메일 입력후 ADD 버튼 누르면 그룹챗 멤버로 추가
-$('#inviteMemberAddBtn').click(function () {
+$('#inviteMemberAddBtn').click(async function () {
   const invitedMemberEmail = $('#invitedMemberEmail').val();
 
-  if (invitedMemberEmail) {
+  if (invitedMemberEmail && userProfileInfo) {
+    // 사용자 자신인지 체크
+    const isUserSelf = userProfileInfo.email == invitedMemberEmail;
+    if (isUserSelf) {
+      alert('본인을 제외한 사용자를 추가해주세요.');
+      $('#invitedMemberEmail').val('');
+      return;
+    }
+
     // 이미 추가해놓은 이메일인지 체크
     const isAdded = invitedMembers.find((member) => invitedMemberEmail === member.email);
 
@@ -34,7 +41,7 @@ $('#inviteMemberAddBtn').click(function () {
     }
 
     // 존재하는 멤버인지 체크
-    $.ajax({
+    await $.ajax({
       type: 'POST',
       url: '/api/member/invite',
       headers: {
@@ -47,13 +54,12 @@ $('#inviteMemberAddBtn').click(function () {
       success: function (result) {
         if (result.code == 200) {
           const addedMember = result.data;
-
           // invitedMembers에 추가
           invitedMembers.push(addedMember);
           // invitedMembers 리스트 화면에 반영
           appendMemberToList(addedMember);
         } else if (result.code == 400) {
-          alert(result.msg);
+          alert('해당 email의 사용자가 존재하지 않습니다.');
           $('#invitedMemberEmail').val('');
           $('#invitedMemberEmail').focus();
         }
@@ -76,12 +82,13 @@ $('#invitedMemberList').click(function (e) {
     invitedMembers = invitedMembers.filter((member) => {
       return member.member_id != e.target.dataset.memberId;
     });
-  }
 
-  console.log(`member_id(${e.target.dataset.memberId}) 삭제 후 멤버 리스트`, invitedMembers);
+    renderInviteMembers(invitedMembers);
+    console.log(`member_id(${e.target.dataset.memberId}) 삭제 후 멤버 리스트`, invitedMembers);
+  }
 });
 
-$('#createGroupChatForm').submit(async function () {
+$('#createGroupChatForm').submit(async function (e) {
   const channel_name = $('#channel_name').val();
 
   const inputGroupChatImg = document.getElementById('uploadGroupChatImg');
@@ -112,6 +119,7 @@ $('#createGroupChatForm').submit(async function () {
   }
   // ===================================
   if (invitedMembers.length) {
+    e.preventDefault();
     await $.ajax({
       type: 'POST',
       url: '/api/channel/addchatgroup',
@@ -120,12 +128,14 @@ $('#createGroupChatForm').submit(async function () {
       },
       data: {
         channelName: channel_name,
-        members: invitedMembers,
+        members: JSON.stringify(invitedMembers),
         profile: chatProfileImagePath || 'img/close.svg',
       },
       dataType: 'json',
       success: function (result) {
+        console.log(result);
         if (result.code == 200) {
+          e.preventDefault();
           alert('그룹채팅 생성이 완료되었습니다.');
           $('#GroupChatFormModalCloseBtn').click();
           // ============================
@@ -134,6 +144,8 @@ $('#createGroupChatForm').submit(async function () {
         } else if (result.code == 400) {
           // 채널명 중복시 경고창
           alert(result.msg);
+        } else {
+          alert(result.msg);
         }
       },
       error: function (err) {
@@ -141,9 +153,12 @@ $('#createGroupChatForm').submit(async function () {
         alert('그룹채팅 생성 중 문제가 발생했습니다.');
       },
     });
+    e.preventDefault();
   } else {
     alert('그룹채팅의 대화멤버를 추가해주세요.');
   }
+
+  e.preventDefault();
   return false;
 });
 
@@ -151,7 +166,7 @@ $('#createGroupChatForm').submit(async function () {
 
 function makeStackedUserHTML(member) {
   return `<div class="stacked-user">
-            <img src="${member.profile_img_path}" alt="User" />
+            <img src="${member?.profile_img_path || 'img/close.svg'}" alt="User" />
             <span class="delete-user" data-member-id="${member.member_id}">
               <img src="img/close.svg" alt="Remove User" data-member-id="${member.member_id}" />
             </span>
@@ -175,7 +190,7 @@ function renderInviteMembers(members) {
 function clearGroupChatForm() {
   console.log('clearGroupChatForm');
 
-  $('#uploadGroupChatImg').val('');
+  $('#uploadGroupChatImg').attr('src', '');
   document.getElementById('previewImage').src = 'img/group2.svg';
   $('#invitedMemberEmail').val('');
   $('#channel_name').val('');

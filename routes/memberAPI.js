@@ -264,7 +264,7 @@ router.get('/profile', tokenAuthChecking, async (req, res, next) => {
 
   try {
     // res.locals.tokenJsonData에 검증된 토큰 정보가 들어있음
-    const loginMemberId = res.locals.tokenData.member_id;
+    const loginMemberId = req.tokenData.member_id;
 
     const dbMember = await db.Member.findOne({
       where: { member_id: loginMemberId },
@@ -277,6 +277,7 @@ router.get('/profile', tokenAuthChecking, async (req, res, next) => {
     apiResult.data = dbMember;
     apiResult.result = 'member profile ok';
   } catch (err) {
+    console.log(err);
     apiResult.code = 500;
     apiResult.data = null;
     apiResult.result = '서버에러발생 관리자에게 문의하세요.';
@@ -456,9 +457,15 @@ router.post('/invite', async (req, res, next) => {
       attributes: ['member_id', 'email', 'name', 'profile_img_path', 'use_state_code'],
     });
 
-    apiResult.code = 200;
-    apiResult.data = inviteMember;
-    apiResult.result = 'ok';
+    if (inviteMember) {
+      apiResult.code = 200;
+      apiResult.data = inviteMember;
+      apiResult.result = 'ok';
+    } else {
+      apiResult.code = 400;
+      apiResult.data = null;
+      apiResult.result = 'Failed';
+    }
   } catch (err) {
     apiResult.code = 500;
     apiResult.data = null;
