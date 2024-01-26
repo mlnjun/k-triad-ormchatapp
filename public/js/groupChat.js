@@ -18,7 +18,7 @@ $("#groups-tab").click(function () {
 
           if (result.code == 200) {
               // 최초 UL 태그내 LI 태그 모두 삭제처리
-              $(".groups-list").html("");
+              $(".group-chat-cards").html("");
 
               $.each(result.data, function (index, channel) {
                   var groupTag = `<li onClick="fnGroupChatEntry(${channel.channel_id},'${channel.channel_name}',2);">
@@ -45,6 +45,8 @@ $("#groups-tab").click(function () {
       },
   });
 });
+
+
 // 그룹챗 모달 닫기버튼 누르거나 모달 바깥영역 누르면 폼 초기화하기
 $('#GroupChatFormModalCloseBtn').click(clearGroupChatForm);
 $('#createGroup').click(function (e) {
