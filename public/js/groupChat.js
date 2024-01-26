@@ -3,7 +3,7 @@ let chatProfileImagePath = null;
 const loginUserToken = localStorage.getItem('userAuthToken');
 
 // 그룹 채널 목록 조회
-$("#group-icon").click(function () {
+$("#groups-tab").click(function () {
   var loginUserToken = localStorage.getItem("userauthtoken");
 
   // AJAX로 사용자가 속한 그룹 채널 목록 조회 데이터 바인딩 처리
@@ -22,12 +22,12 @@ $("#group-icon").click(function () {
               $(".groups-list").html("");
 
               $.each(result.data, function (index, channel) {
-                  var groupTag = `<li onClick="fnGroupChatEntry(${channel.channel_Id},'${channel.channel_Name}',2);">
+                  var groupTag = `<li onClick="fnGroupChatEntry(${channel.channel_id},'${channel.channel_name}',2);">
                           <a href="#">
                               <div class="groups-list-body">
                                   <div class="groups-msg">
-                                      <h6 class="text-truncate">${channel.channel_Name}</h6>
-                                      <p class="text-truncate">그룹 채널 멤버 수: ${channel.memberCount}</p>
+                                      <h6 class="text-truncate">${channel.channel_name}</h6>
+                                      <p class="text-truncate">그룹 채널 멤버 수: ${channel.user_limit}</p>
                                   </div>
                               </div>
                           </a>
