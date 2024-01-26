@@ -2,6 +2,50 @@ let invitedMembers = [];
 let chatProfileImagePath = null;
 const loginUserToken = localStorage.getItem('userAuthToken');
 
+// 그룹 채널 목록 조회
+$("#group-icon").click(function () {
+  var loginUserToken = localStorage.getItem("userauthtoken");
+
+  // AJAX로 사용자가 속한 그룹 채널 목록 조회 데이터 바인딩 처리
+  $.ajax({
+      type: "POST",
+      url: "/api/channel/channelsByMember",
+      headers: {
+          Authorization: `Bearer ${loginUserToken}`,
+      },
+      dataType: "json",
+      success: function (result) {
+          console.log("사용자가 속한 그룹 채널 목록 조회 결과: ", result);
+
+          if (result.code == 200) {
+              // 최초 UL 태그내 LI 태그 모두 삭제처리
+              $(".groups-list").html("");
+
+              $.each(result.data, function (index, channel) {
+                  var groupTag = `<li onClick="fnGroupChatEntry(${channel.channel_Id},'${channel.channel_Name}',2);">
+                          <a href="#">
+                              <div class="groups-list-body">
+                                  <div class="groups-msg">
+                                      <h6 class="text-truncate">${channel.channel_Name}</h6>
+                                      <p class="text-truncate">그룹 채널 멤버 수: ${channel.memberCount}</p>
+                                  </div>
+                              </div>
+                          </a>
+                      </li>`;
+
+                  $(".groups-list").append(groupTag);
+              });
+          } else {
+              if (result.code == 400) {
+                  alert(result.code);
+              }
+          }
+      },
+      error: function (err) {
+          console.log("백엔드 API 호출 에러발생:", err);
+      },
+  });
+});
 // 그룹챗 모달 닫기버튼 누르거나 모달 바깥영역 누르면 폼 초기화하기
 $('#GroupChatFormModalCloseBtn').click(clearGroupChatForm);
 $('#createGroup').click(function (e) {
