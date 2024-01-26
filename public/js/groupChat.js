@@ -21,7 +21,7 @@ $("#groups-tab").click(function () {
               $(".group-chat-cards").html("");
 
               $.each(result.data, function (index, channel) {
-                  var groupTag = `<li onClick="fnGroupChatEntry(${channel.channel_id},'${channel.channel_name}',2);">
+                  var groupTag = `<li onClick="fnGroupChatEntry(${channel.channel_id},${channel.channel_name},2)">
                           <a href="#">
                               <div class="groups-list-body">
                                   <div class="groups-msg">
@@ -32,7 +32,7 @@ $("#groups-tab").click(function () {
                           </a>
                       </li>`;
 
-                  $(".groups-list").append(groupTag);
+                  $(".group-chat-cards").append(groupTag);
               });
           } else {
               if (result.code == 400) {
