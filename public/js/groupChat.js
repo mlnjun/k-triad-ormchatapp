@@ -1,30 +1,25 @@
-let invitedMembers = [{ member_id: '1' }, { member_id: '2' }, { member_id: '3' }, { member_id: 4 }];
+let invitedMembers = [];
+let chatProfileImagePath = null;
 const loginUserToken = localStorage.getItem('userAuthToken');
 
+// 그룹챗 모달 닫기버튼 누르거나 모달 바깥영역 누르면 폼 초기화하기
 $('#GroupChatFormModalCloseBtn').click(clearGroupChatForm);
 $('#createGroup').click(function (e) {
   var modal = document.getElementById('groupChatCreateModal');
   if (e.target !== modal && !modal.contains(e.target)) {
     // 클릭된 요소가 모달과 모달의 하위 요소들이 아니면 모달을 닫음
-    console.log('설마 이 콜백은 아니겠지');
+    console.log('설마여기!!!!!');
     console.log(e.target);
     console.log(modal.contains(e.target));
     clearGroupChatForm();
   }
 });
 
-$('#invitedMemberList').click(function (e) {
-  e.stopPropagation();
-
-  if (e.target.dataset.memberId) {
-    invitedMembers = invitedMembers.filter((member) => {
-      return member.member_id != e.target.dataset.memberId;
-    });
-  }
-
-  console.log(invitedMembers);
+$('#uploadGroupChatImg').change(function () {
+  previewImage();
 });
 
+// 이메일 입력후 ADD 버튼 누르면 그룹챗 멤버로 추가
 $('#inviteMemberAddBtn').click(function () {
   const invitedMemberEmail = $('#invitedMemberEmail').val();
 
@@ -67,17 +62,54 @@ $('#inviteMemberAddBtn').click(function () {
         console.log('api 호출 에러: ', err);
       },
     });
+  } else {
+    alert('초대할 사용자의 이메일을 입력해주세요.');
+    $('#invitedMemberEmail').focus();
   }
+});
+
+// 초대할 사용자 삭제버튼 클릭 이벤트핸들러(부모요소에 이벤트 위임함)
+$('#invitedMemberList').click(function (e) {
+  e.stopPropagation();
+
+  if (e.target.dataset.memberId) {
+    invitedMembers = invitedMembers.filter((member) => {
+      return member.member_id != e.target.dataset.memberId;
+    });
+  }
+
+  console.log(`member_id(${e.target.dataset.memberId}) 삭제 후 멤버 리스트`, invitedMembers);
 });
 
 $('#createGroupChatForm').submit(async function () {
   const channel_name = $('#channel_name').val();
 
-  // ===================================
-  // 이미지가 있다면 이미지 먼저 보내서 저장하고 그 경로 받아서 처리해야할것임...
-  // if ('이미지가 있다면') {
-  // const 이미지 경로 = await 이미지 디비 저장 요청 api 결과인 이미지 패스
-  // }
+  const inputGroupChatImg = document.getElementById('uploadGroupChatImg');
+  const file = inputGroupChatImg.files[0];
+
+  if (file) {
+    console.log('그룹챗 이미지 업로드');
+    await $.ajax({
+      type: 'POST',
+      url: '/api/channel/uploadprofile',
+      headers: {
+        Authorization: `Bearer ${loginUserToken}`,
+      },
+      data: file,
+      success: function (result) {
+        if (result.code == 200) {
+          console.log('그룹챗 이미지 업로드 완료~~~');
+          chatProfileImagePath = result.data;
+        } else {
+          alert('이미지 업로드 중 문제가 발생했습니다.');
+        }
+      },
+      error: function (err) {
+        console.log('api 호출 에러: ', err);
+        alert('이미지 업로드 중 문제가 발생했습니다.');
+      },
+    });
+  }
   // ===================================
   if (invitedMembers.length) {
     await $.ajax({
@@ -89,7 +121,7 @@ $('#createGroupChatForm').submit(async function () {
       data: {
         channelName: channel_name,
         members: invitedMembers,
-        profile: 'img/close.svg',
+        profile: chatProfileImagePath || 'img/close.svg',
       },
       dataType: 'json',
       success: function (result) {
@@ -114,8 +146,6 @@ $('#createGroupChatForm').submit(async function () {
   }
   return false;
 });
-
-$('#uploadGroupChatImg').change(previewImage);
 
 // =========== 함수들 정의 ===================
 
@@ -154,9 +184,9 @@ function clearGroupChatForm() {
 }
 
 function previewImage() {
-  var input = document.getElementById('uploadGroupChatImg');
+  var inputGroupChatImg = document.getElementById('uploadGroupChatImg');
   var preview = document.getElementById('previewImage');
-  var file = input.files[0];
+  var file = inputGroupChatImg.files[0];
 
   var reader = new FileReader();
 
