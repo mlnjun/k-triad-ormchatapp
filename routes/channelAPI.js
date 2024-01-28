@@ -342,7 +342,7 @@ router.post('/addchatgroup', tokenAuthChecking, async (req, res, next) => {
 router.post('/channelsByMember', tokenAuthChecking, async (req, res, next) => {
   try {
     // 쿼리로 해당 유저가 속한 채널 데이터 찾기
-    const sqlQuery = `SELECT * FROM channel WHERE channel_id IN(SELECT channel_id FROM channel_member WHERE member_id=${req.tokenData})ORDER BY channel_id DESC;`;
+    const sqlQuery = `SELECT * FROM channel WHERE channel_id IN(SELECT channel_id FROM channel_member WHERE member_id=${req.tokenData.member_id})ORDER BY channel_id DESC;`;
 
     var userChannels = await sequelize.query(sqlQuery, {
       raw: true,
