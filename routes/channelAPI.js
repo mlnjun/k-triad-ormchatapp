@@ -199,10 +199,10 @@ router.delete('/delete/:cid', async (req, res) => {
 router.post('/uploadprofile', upload.single('file'), async (req, res, next) => {
   try {
     // 파일 받기
-    const profile = req.file;
+    const uploadFile = req.file;
 
     // 받은 데이터 존재 확인
-    if (profile != null) {
+    if (uploadFile != null) {
       // 데이터 존재
       // 파일 경로
       var filePath = '/upload/channel/' + uploadFile.filename;
@@ -219,11 +219,41 @@ router.post('/uploadprofile', upload.single('file'), async (req, res, next) => {
     }
   } catch (err) {
     // 서버오류
+    console.error('/uploadprofile API 호출 에러', err);
     apiResult.code = 500;
     apiResult.data = null;
     apiResult.msg = '서버 오류';
   }
 
+  res.json(apiResult);
+});
+
+// 채널명 중복 확인 api
+router.get('/channelName', async (req, res) => {
+  var apiResult = {
+    code: 400,
+    data: null,
+    msg: '',
+  };
+  try {
+    const channelName = req.query.chName;
+    var isNameSame = await db.Channel.findOne({ where: { channel_name: channelName } });
+
+    if (isNameSame) {
+      apiResult.code = 200;
+      apiResult.data = 'no';
+      apiResult.msg = '사용불가';
+    } else {
+      apiResult.code = 200;
+      apiResult.data = 'ok';
+      apiResult.msg = '사용가능';
+    }
+  } catch (e) {
+    console.log('/channelName API 호출 에러', err);
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.msg = '서버 오류';
+  }
   res.json(apiResult);
 });
 
@@ -233,7 +263,6 @@ router.post('/addchatgroup', tokenAuthChecking, async (req, res, next) => {
   try {
     // 데이터 받기
     var inviteMember = JSON.parse(req.body.members);
-    console.log('inviteMember!!!!', inviteMember);
     var profilePath = req.body.profile;
     var channelName = req.body.channelName;
     // 토큰 데이터 추출

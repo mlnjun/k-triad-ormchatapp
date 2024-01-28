@@ -1675,7 +1675,7 @@
                 </button>
               </div>
               <div class="modal-body">
-                <form id="createGroupChatForm" action="/api/channel/create" method="post">
+                <form id="createGroupChatForm" enctype="multipart/form-data">
                   <!-- Upload profile start -->
                   <div class="upload-profile">
                     <div class="upload-profile-image">
@@ -1683,7 +1683,12 @@
                     </div>
                     <div class="field-wrapper">
                       <div class="custom-file">
-                        <input type="file" class="custom-file-input" id="uploadGroupChatImg" />
+                        <input
+                          type="file"
+                          class="custom-file-input"
+                          id="uploadGroupChatImg"
+                          name="uploadGroupChatImg"
+                        />
                         <label class="custom-file-label" for="uploadGroupChatImg">Group image</label>
                       </div>
                     </div>
@@ -1899,6 +1904,7 @@
             userProfileInfo = result.data;
           } else if (result.code == 400) {
             alert(result.msg);
+            window.location.href = '/login1.html';
           }
         },
         error: function (err) {
