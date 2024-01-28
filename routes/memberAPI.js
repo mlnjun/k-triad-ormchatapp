@@ -15,6 +15,25 @@ const jwt = require('jsonwebtoken');
 // 토큰 인증 미들웨어 참조
 var { tokenAuthChecking } = require('./apiMiddleware');
 
+// multer 패키지 참조
+var multer = require('multer');
+
+// moment 패키지 참조
+const moment = require('moment');
+
+// -파일저장위치 지정 (해당 라우터)
+var storage = multer.diskStorage({
+  destination(req, file, cb) {
+    cb(null, 'public/upload/member/');
+  },
+  filename(req, file, cb) {
+    cb(null, `${moment(Date.now()).format('YYYYMMDDHHmmss')}__${file.originalname}`);
+  },
+});
+
+//일반 업로드처리 객체 생성
+var upload = multer({ storage: storage });
+
 //회원 정보 관리 RESTful API 라우팅 기능 제공
 // http://localhost:3000/api/member
 
@@ -529,6 +548,63 @@ router.post('/password/update', tokenAuthChecking, async (req, res, next) => {
   }
 
   res.json(resultMsg);
+});
+
+// 프로필 이미지 업로드 처리 및 이미지 저장 경로 전달
+router.post('/profileImage', tokenAuthChecking, upload.single('file'), async (req, res, next) => {
+  const apiResult = {
+    code: 400,
+    data: null,
+    result: '',
+  };
+
+  try {
+    // 파일 받기
+    const uploadFile = req.file;
+    const tokenJsonData = req.tokenData;
+
+    if (uploadFile) {
+      var filePath = '/upload/member/' + uploadFile.filename;
+
+      const updatedCount = await db.Member.update(
+        { profile_img_path: filePath },
+        { where: { member_id: tokenJsonData.member_id } },
+      );
+
+      if (updatedCount) {
+        //변경된 데이터 기반 JWT인증 사용자 정보 토큰 값 구조 정의 및 데이터 세팅
+        var memberTokenData = {
+          member_id: tokenJsonData.member_id,
+          email: tokenJsonData.email,
+          name: tokenJsonData.name,
+          telephone: tokenJsonData.telephone,
+          etc: tokenJsonData.etc,
+          profile_img_path: filePath,
+        };
+
+        // 변경된 데이터 기반 JWT 생성
+        var token = await jwt.sign(memberTokenData, process.env.JWT_KEY, { expiresIn: '24h', issuer: 'company' });
+        apiResult.code = 200;
+        apiResult.data = { token, profile_img_path: filePath };
+        apiResult.msg = '프로필 이미지 업데이트 완료';
+      } else {
+        new Error('DB 업데이트 실패');
+      }
+    } else {
+      // 파일 데이터 들어오지 않음
+      apiResult.code = 400;
+      apiResult.data = null;
+      apiResult.msg = '파일 데이터가 전달되지 않았습니다.';
+    }
+  } catch (err) {
+    // 서버오류
+    console.error('/profileImage API 호출 에러', err);
+    apiResult.code = 500;
+    apiResult.data = null;
+    apiResult.msg = '서버 오류';
+  }
+
+  res.json(apiResult);
 });
 
 module.exports = router;
