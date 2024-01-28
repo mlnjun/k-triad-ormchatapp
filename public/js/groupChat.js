@@ -22,7 +22,7 @@ $('#uploadGroupChatImg').change(function () {
 $('#inviteMemberAddBtn').click(async function () {
   const invitedMemberEmail = $('#invitedMemberEmail').val();
 
-  if (invitedMemberEmail && userProfileInfo) {
+  if (invitedMemberEmail) {
     // 사용자 자신인지 체크
     const isUserSelf = userProfileInfo.email == invitedMemberEmail;
     if (isUserSelf) {
@@ -58,6 +58,7 @@ $('#inviteMemberAddBtn').click(async function () {
           invitedMembers.push(addedMember);
           // invitedMembers 리스트 화면에 반영
           appendMemberToList(addedMember);
+          $('#invitedMemberEmail').val('');
         } else if (result.code == 400) {
           alert('해당 email의 사용자가 존재하지 않습니다.');
           $('#invitedMemberEmail').val('');
@@ -74,7 +75,6 @@ $('#inviteMemberAddBtn').click(async function () {
   }
 });
 
-// 초대할 사용자 삭제버튼 클릭 이벤트핸들러(부모요소에 이벤트 위임함)
 $('#invitedMemberList').click(function (e) {
   e.stopPropagation();
 
@@ -88,74 +88,105 @@ $('#invitedMemberList').click(function (e) {
   }
 });
 
+// Form태그 엔터키 기본동작 막기
+$('#createGroupChatForm').keydown(function (e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+  }
+});
+
 $('#createGroupChatForm').submit(async function (e) {
+  e.preventDefault();
   const channel_name = $('#channel_name').val();
 
   const inputGroupChatImg = document.getElementById('uploadGroupChatImg');
   const file = inputGroupChatImg.files[0];
 
-  if (file) {
-    console.log('그룹챗 이미지 업로드');
-    await $.ajax({
-      type: 'POST',
-      url: '/api/channel/uploadprofile',
-      headers: {
-        Authorization: `Bearer ${loginUserToken}`,
-      },
-      data: file,
-      success: function (result) {
-        if (result.code == 200) {
-          console.log('그룹챗 이미지 업로드 완료~~~');
-          chatProfileImagePath = result.data;
-        } else {
+  try {
+    // ==== 1. 채널명 중복확인 ============
+    const channelNameCheckData = await $.ajax({
+      url: `/api/channel/channelName?chName=${channel_name}`,
+      method: 'GET',
+    });
+
+    if (channelNameCheckData.code == 200 && channelNameCheckData.data == 'no') {
+      alert('이미 동일한 이름의 채팅명이 존재합니다.');
+      $('#channel_name').focus();
+      return;
+    }
+
+    // ==== 2. 이미지 업로드 ============
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await $.ajax({
+        type: 'POST',
+        url: '/api/channel/uploadprofile',
+        headers: {
+          Authorization: `Bearer ${loginUserToken}`,
+        },
+        data: formData,
+        cache: false,
+        contentType: false,
+        processData: false,
+        success: function (result) {
+          if (result.code == 200) {
+            console.log('그룹챗 이미지 업로드 완료~~~');
+            chatProfileImagePath = result.data;
+          } else {
+            alert('이미지 업로드 중 문제가 발생했습니다.');
+          }
+        },
+        error: function (err) {
+          console.error('api 호출 에러: ', err);
           alert('이미지 업로드 중 문제가 발생했습니다.');
-        }
-      },
-      error: function (err) {
-        console.log('api 호출 에러: ', err);
-        alert('이미지 업로드 중 문제가 발생했습니다.');
-      },
-    });
-  }
-  // ===================================
-  if (invitedMembers.length) {
-    e.preventDefault();
-    await $.ajax({
-      type: 'POST',
-      url: '/api/channel/addchatgroup',
-      headers: {
-        Authorization: `Bearer ${loginUserToken}`,
-      },
-      data: {
-        channelName: channel_name,
-        members: JSON.stringify(invitedMembers),
-        profile: chatProfileImagePath || 'img/close.svg',
-      },
-      dataType: 'json',
-      success: function (result) {
-        console.log(result);
-        if (result.code == 200) {
-          e.preventDefault();
-          alert('그룹채팅 생성이 완료되었습니다.');
-          $('#GroupChatFormModalCloseBtn').click();
-          // ============================
-          // 내가 속한 그룹 채팅 목록 조회 다시 해서 뿌리기 ~
-          // ============================
-        } else if (result.code == 400) {
-          // 채널명 중복시 경고창
-          alert(result.msg);
-        } else {
-          alert(result.msg);
-        }
-      },
-      error: function (err) {
-        console.log('api 호출 에러: ', err);
-        alert('그룹채팅 생성 중 문제가 발생했습니다.');
-      },
-    });
-    e.preventDefault();
-  } else {
-    alert('그룹채팅의 대화멤버를 추가해주세요.');
+        },
+      });
+    }
+
+    // =====3. 업로드된 이미지 경로 넣어서 채널 생성==========
+
+    if (invitedMembers.length) {
+      e.preventDefault();
+      await $.ajax({
+        type: 'POST',
+        url: '/api/channel/addchatgroup',
+        headers: {
+          Authorization: `Bearer ${loginUserToken}`,
+        },
+        data: {
+          channelName: channel_name,
+          members: JSON.stringify(invitedMembers),
+          profile: chatProfileImagePath || 'img/group2.svg',
+        },
+        dataType: 'json',
+        success: function (result) {
+          if (result.code == 200) {
+            e.preventDefault();
+            alert('그룹채팅 생성이 완료되었습니다.');
+            $('#GroupChatFormModalCloseBtn').click();
+            // ============================
+            // 내가 속한 그룹 채팅 목록 조회 다시 해서 뿌리기 ~
+            // ============================
+          } else if (result.code == 400) {
+            // 채널명 중복시 경고창
+            alert(result.msg);
+          } else {
+            alert(result.msg);
+          }
+        },
+        error: function (err) {
+          console.log('api 호출 에러: ', err);
+          alert('그룹채팅 생성 중 문제가 발생했습니다.');
+        },
+      });
+      e.preventDefault();
+    } else {
+      alert('그룹채팅의 대화멤버를 추가해주세요.');
+    }
+  } catch (e) {
+    console.log(e);
   }
 
   e.preventDefault();
@@ -188,8 +219,6 @@ function renderInviteMembers(members) {
 }
 
 function clearGroupChatForm() {
-  console.log('clearGroupChatForm');
-
   $('#uploadGroupChatImg').attr('src', '');
   document.getElementById('previewImage').src = 'img/group2.svg';
   $('#invitedMemberEmail').val('');
