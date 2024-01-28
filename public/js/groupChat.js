@@ -217,7 +217,7 @@ function getGroupChatList() {
           var groupTag = `<li onClick="fnGroupChatEntry(${channel.channel_id},${channel.channel_name},2)">
                           <a href="#">
                           <div class="group-avatar">
-                      <img src="${channel.channel_img_path}" alt="Group Image" />
+                      <img src="${channel.channel_img_path}" alt="Group Image" style="object-fit: cover" />
                     </div>
                               <div class="groups-list-body">
                                   <div class="groups-msg">
