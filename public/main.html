@@ -104,7 +104,7 @@
               <img src="img/settings.svg" alt="Settings" />
               <span class="nav-link-text">Settings</span>
             </a>
-            <a href="login.html" class="nav-link mt-auto">
+            <a href="#" class="nav-link mt-auto" id="logoutBtn">
               <img src="img/logout.svg" alt="Logout" />
             </a>
           </div>
@@ -1145,9 +1145,7 @@
               <!-- Group chat list start -->
               <div class="group-chat-list">
                 <ul class="group-chat-cards">
-
                   <!-- 채널 목록  -->
-
                 </ul>
               </div>
               <!-- Group chat list end -->
@@ -1187,12 +1185,12 @@
                         <div class="account-settings-body">
                           <div class="upload-profile">
                             <div class="upload-profile-image">
-                              <img id="userProfileImage" src="" alt="Profile Image" />
+                              <img id="userProfileImage" src="" alt="Profile Image" style="object-fit: cover" />
                             </div>
                             <div class="field-wrapper">
                               <div class="custom-file">
-                                <input type="file" class="custom-file-input" id="uploadProfile" />
-                                <label class="custom-file-label" for="uploadProfile">Choose file</label>
+                                <input type="file" class="custom-file-input" id="uploadUserProfileImage" />
+                                <label class="custom-file-label" for="uploadUserProfileImage">Choose file</label>
                               </div>
                             </div>
                           </div>
@@ -1886,31 +1884,10 @@
 
     <!-- 프론트엔드 코드 -->
     <script>
+      let loginUserToken = localStorage.getItem('userauthtoken');
       let userProfileInfo;
 
-      const loginUserToken = localStorage.getItem('userauthtoken');
-
-      $.ajax({
-        // 사용자 프로필 정보 불러오기
-        type: 'GET',
-        url: '/api/member/profile',
-        headers: {
-          Authorization: `Bearer ${loginUserToken}`,
-        },
-        dataType: 'json',
-        success: function (result) {
-          console.log('현재 사용자 정보 호출 결과: ', result);
-          if (result.code == 200) {
-            userProfileInfo = result.data;
-          } else if (result.code == 400) {
-            alert(result.msg);
-            window.location.href = '/login1.html';
-          }
-        },
-        error: function (err) {
-          console.log('api 호출 에러: ', err);
-        },
-      });
+      getUserProfileInfo(loginUserToken);
 
       // #changePassword form태그 submit 이벤트
       $('#changePassword').submit(function () {
@@ -1962,7 +1939,10 @@
         $('#userProfileEmail').val(userProfileInfo.email);
         $('#userProfileName').val(userProfileInfo.name);
         $('#userProfileTelephone').val(userProfileInfo.telephone);
-        $('#userProfileImage').attr('src', userProfileInfo.profile_img_path);
+        $('#userProfileImage').attr(
+          'src',
+          userProfileInfo.profile_img_path || 'https://i.ibb.co/gmxmL0x/default-profile.png',
+        );
       });
 
       // '프로필 수정 버튼'에 클릭이벤트 발생시 사용자 정보 수정 요청
@@ -1973,21 +1953,19 @@
         const telephone = $('#userProfileTelephone').val();
 
         // 빈칸 체크
-        if (!email) {
-          alert('이메일을 입력해주세요.');
-          $('#userProfileEmail').focus();
-          return false;
-        } else if (!name) {
+        if (!name) {
           alert('이름을 입력해주세요.');
           $('#userProfileName').focus();
+          return false;
+        } else if (!email) {
+          alert('이메일을 입력해주세요.');
+          $('#userProfileEmail').focus();
           return false;
         } else if (!telephone) {
           alert('전화번호를 입력해주세요.');
           $('#userProfileTelephone').focus();
           return false;
         }
-
-        const loginUserToken = localStorage.getItem('userauthtoken');
 
         $.ajax({
           // 사용자 프로필 수정 요청
@@ -1997,8 +1975,8 @@
             Authorization: `Bearer ${loginUserToken}`,
           },
           data: {
-            email,
             name,
+            email,
             telephone,
           },
           dataType: 'json',
@@ -2017,6 +1995,75 @@
           },
         });
       });
+
+      // 로그아웃 버튼 이벤트핸들러
+      $('#logoutBtn').click(function () {
+        if (confirm('로그아웃 하시겠습니까?')) {
+          localStorage.removeItem('userauthtoken');
+          window.location.href = '/login1.html';
+        }
+      });
+
+      $('#uploadUserProfileImage').change(async function (e) {
+        const file = e.target.files[0];
+
+        if (file) {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          await $.ajax({
+            type: 'POST',
+            url: '/api/member/profileImage',
+            headers: {
+              Authorization: `Bearer ${loginUserToken}`,
+            },
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function (result) {
+              if (result.code == 200) {
+                localStorage.setItem('userauthtoken', result.data.token);
+                getUserProfileInfo(result.data.token);
+                $('#userProfileImage').attr('src', result.data.profile_img_path);
+
+                alert('프로필 이미지 수정완료');
+              } else {
+                alert('이미지 업로드 중 문제가 발생했습니다.');
+              }
+            },
+            error: function (err) {
+              console.error('api 호출 에러: ', err);
+              alert('이미지 업로드 중 문제가 발생했습니다.');
+            },
+          });
+        }
+      });
+
+      // ============= 함수 정의 ======================
+      function getUserProfileInfo(loginUserToken) {
+        $.ajax({
+          // 사용자 프로필 정보 불러오기
+          type: 'GET',
+          url: '/api/member/profile',
+          headers: {
+            Authorization: `Bearer ${loginUserToken}`,
+          },
+          dataType: 'json',
+          success: function (result) {
+            console.log('현재 사용자 정보 호출 결과: ', result);
+            if (result.code == 200) {
+              userProfileInfo = result.data;
+            } else if (result.code == 400) {
+              alert(result.msg);
+              window.location.href = '/login1.html';
+            }
+          },
+          error: function (err) {
+            console.log('api 호출 에러: ', err);
+          },
+        });
+      }
     </script>
 
     // 그룹챗 생성 로직 자바스크립트 파일 로드

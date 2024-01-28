@@ -29,7 +29,7 @@ var storage = multer.diskStorage({
     cb(null, 'public/upload/channel/');
   },
   filename(req, file, cb) {
-    cb(null, `${moment(Date.now()).format('YYYYMMddHHmmss')}__${file.originalname}`);
+    cb(null, `${moment(Date.now()).format('YYYYMMDDHHmmss')}__${file.originalname}`);
   },
 });
 
